@@ -136,6 +136,15 @@
   ],
   "vitals_telemetry": [
     {
+      "id": "vit-1793549009185",
+      "user_id": "a1111111-1111-1111-1111-111111111111",
+      "heart_rate_bpm": 72,
+      "spo2_pct": 98.6,
+      "skin_temp_c": 36.6,
+      "hrv_sdnn_ms": 56,
+      "timestamp": "2026-11-01T16:03:29.185Z"
+    },
+    {
       "id": "vit-1793516819061",
       "user_id": "a1111111-1111-1111-1111-111111111111",
       "heart_rate_bpm": 72,
@@ -363,6 +372,19 @@
   ],
   "emergency_sos_events": [
     {
+      "id": "sos-1793549009194",
+      "user_id": "a1111111-1111-1111-1111-111111111111",
+      "triggered_at": "2026-11-01T16:03:29.194Z",
+      "gps_latitude": 19.076,
+      "gps_longitude": 72.8777,
+      "heartRate_at_trigger": 110,
+      "status": "dispatched",
+      "dispatched_recipients": [
+        "Rahul Sharma (+91 98765 00001)",
+        "Dr. Anjali Mehta (+91 98765 00002)"
+      ]
+    },
+    {
       "id": "sos-1793516819066",
       "user_id": "a1111111-1111-1111-1111-111111111111",
       "triggered_at": "2026-11-01T07:06:59.066Z",
@@ -524,6 +546,22 @@
   ],
   "clinical_consultations": [
     {
+      "id": "cn-1793549009190",
+      "doctor_id": "d4444444-4444-4444-4444-444444444444",
+      "patient_id": "demo-reproductive",
+      "consultation_date": "2026-11-01",
+      "doctor_name": "Dr. Anjali Mehta, MD",
+      "specialty": "Obstetrics & Gynecology",
+      "subjective_notes": "Patient telemetry reviewed.",
+      "objective_vitals": "BP 120/80 normal",
+      "assessment": "Hormonal parameters optimal",
+      "treatment_plan": "Follow up in 4 weeks",
+      "prescriptions": [
+        "Vitamin D3 2000IU"
+      ],
+      "status": "signed"
+    },
+    {
       "id": "cn-1793516819064",
       "doctor_id": "d4444444-4444-4444-4444-444444444444",
       "patient_id": "demo-reproductive",
@@ -666,6 +704,76 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "log-1793549009194",
+      "timestamp": "2026-11-01 16:03:29",
+      "actor_email": "priya@example.com",
+      "actor_role": "patient",
+      "action_event": "EMERGENCY_SOS_DISPATCHED_M13",
+      "module_code": "M13_EMERGENCY_MANAGEMENT",
+      "ip_address": "::1",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "log-1793549009193",
+      "timestamp": "2026-11-01 16:03:29",
+      "actor_email": "admin@womenshealth.internal",
+      "actor_role": "Admin",
+      "action_event": "SYSTEM_BACKUP_SNAPSHOT_TRIGGERED",
+      "module_code": "M18_CLOUD_MANAGEMENT",
+      "ip_address": "::1",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "log-1793549009190",
+      "timestamp": "2026-11-01 16:03:29",
+      "actor_email": "dr.mehta@bombayhospital.org",
+      "actor_role": "Doctor",
+      "action_event": "CLINICAL_NOTE_SIGNED_M14",
+      "module_code": "M14_DOCTORS_CONSOLE",
+      "ip_address": "::1",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "log-1793549009172",
+      "timestamp": "2026-11-01 16:03:29",
+      "actor_email": "admin@womenshealth.internal",
+      "actor_role": "admin",
+      "action_event": "USER_LOGIN_SUCCESS",
+      "module_code": "M1_AUTH_SECURITY",
+      "ip_address": "::1",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "log-1793549009170",
+      "timestamp": "2026-11-01 16:03:29",
+      "actor_email": "dr.mehta@bombayhospital.org",
+      "actor_role": "doctor",
+      "action_event": "USER_LOGIN_SUCCESS",
+      "module_code": "M1_AUTH_SECURITY",
+      "ip_address": "::1",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "log-1793549009168",
+      "timestamp": "2026-11-01 16:03:29",
+      "actor_email": "ananya@example.com",
+      "actor_role": "patient",
+      "action_event": "USER_LOGIN_SUCCESS",
+      "module_code": "M1_AUTH_SECURITY",
+      "ip_address": "::1",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "log-1793549009164",
+      "timestamp": "2026-11-01 16:03:29",
+      "actor_email": "priya@example.com",
+      "actor_role": "patient",
+      "action_event": "USER_LOGIN_SUCCESS",
+      "module_code": "M1_AUTH_SECURITY",
+      "ip_address": "::1",
+      "status": "SUCCESS"
+    },
     {
       "id": "log-1793516819066",
       "timestamp": "2026-11-01 07:06:59",

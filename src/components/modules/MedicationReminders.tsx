@@ -20,6 +20,7 @@ import {
   Bell
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { isDemoUser } from '../../data/demoAccounts';
 
 interface MedicationItem {
   id: string;
@@ -32,8 +33,52 @@ interface MedicationItem {
   remaining: number;
 }
 
+const demoMedications: MedicationItem[] = [
+  {
+    id: 'm1',
+    name: 'Methylfolate & B12 Complex',
+    dosage: '800 mcg / 1 Capsule',
+    time: '08:00 AM',
+    instructions: 'Take with morning breakfast & glass of water',
+    taken: true,
+    type: 'Supplement',
+    remaining: 24
+  },
+  {
+    id: 'm2',
+    name: 'Elemental Carbonyl Iron',
+    dosage: '45 mg / 1 Tablet',
+    time: '12:30 PM',
+    instructions: 'Take with citrus/Vit C juice; avoid dairy within 2 hours',
+    taken: true,
+    type: 'Supplement',
+    remaining: 18
+  },
+  {
+    id: 'm3',
+    name: 'Vitamin D3 & K2 Emulsion',
+    dosage: '2,000 IU / 2 Drops',
+    time: '01:30 PM',
+    instructions: 'Fat-soluble; consume with lunch containing healthy lipids',
+    taken: false,
+    type: 'Supplement',
+    remaining: 35
+  },
+  {
+    id: 'm4',
+    name: 'Magnesium Bisglycinate Chelate',
+    dosage: '300 mg / 2 Veggie Caps',
+    time: '09:30 PM',
+    instructions: 'Take 45 mins prior to sleep for neuromuscular relaxation',
+    taken: false,
+    type: 'Supplement',
+    remaining: 42
+  }
+];
+
 export default function MedicationReminders() {
   const { user } = useApp();
+  const isDemo = isDemoUser(user?.email);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
@@ -44,48 +89,27 @@ export default function MedicationReminders() {
   const [medInstructions, setMedInstructions] = useState('');
   const [medType, setMedType] = useState<'Prescription' | 'Supplement'>('Supplement');
 
-  const [medications, setMedications] = useState<MedicationItem[]>([
-    {
-      id: 'm1',
-      name: 'Methylfolate & B12 Complex',
-      dosage: '800 mcg / 1 Capsule',
-      time: '08:00 AM',
-      instructions: 'Take with morning breakfast & glass of water',
-      taken: true,
-      type: 'Supplement',
-      remaining: 24
-    },
-    {
-      id: 'm2',
-      name: 'Elemental Carbonyl Iron',
-      dosage: '45 mg / 1 Tablet',
-      time: '12:30 PM',
-      instructions: 'Take with citrus/Vit C juice; avoid dairy within 2 hours',
-      taken: true,
-      type: 'Supplement',
-      remaining: 18
-    },
-    {
-      id: 'm3',
-      name: 'Vitamin D3 & K2 Emulsion',
-      dosage: '2,000 IU / 2 Drops',
-      time: '01:30 PM',
-      instructions: 'Fat-soluble; consume with lunch containing healthy lipids',
-      taken: false,
-      type: 'Supplement',
-      remaining: 35
-    },
-    {
-      id: 'm4',
-      name: 'Magnesium Bisglycinate Chelate',
-      dosage: '300 mg / 2 Veggie Caps',
-      time: '09:30 PM',
-      instructions: 'Take 45 mins prior to sleep for neuromuscular relaxation',
-      taken: false,
-      type: 'Supplement',
-      remaining: 42
+  const medsStorageKey = `astracare_meds_${user?.email || 'guest'}`;
+  const [medications, setMedications] = useState<MedicationItem[]>(() => {
+    try {
+      const stored = localStorage.getItem(medsStorageKey);
+      if (stored !== null) return JSON.parse(stored);
+    } catch {}
+    if (isDemo) return demoMedications;
+    if (user?.medications && user.medications.length > 0) {
+      return user.medications.map((name, i) => ({
+        id: `m-init-${i}`,
+        name,
+        dosage: '1 Dose',
+        time: i === 0 ? '08:00 AM' : i === 1 ? '01:00 PM' : '08:00 PM',
+        instructions: 'Take as directed with water',
+        taken: false,
+        type: (name.toLowerCase().includes('vit') || name.toLowerCase().includes('iron') ? 'Supplement' : 'Prescription') as 'Prescription' | 'Supplement',
+        remaining: 30
+      }));
     }
-  ]);
+    return [];
+  });
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -93,16 +117,20 @@ export default function MedicationReminders() {
   };
 
   const handleToggleTaken = (id: string) => {
-    setMedications((prev) =>
-      prev.map((m) => {
+    setMedications((prev) => {
+      const updated = prev.map((m) => {
         if (m.id === id) {
           const nextTaken = !m.taken;
           showToast(nextTaken ? `Marked ${m.name} as taken! Streak protected.` : `Unchecked ${m.name}`);
           return { ...m, taken: nextTaken };
         }
         return m;
-      })
-    );
+      });
+      try {
+        localStorage.setItem(medsStorageKey, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
   };
 
   const handleAddMedication = (e: React.FormEvent) => {
@@ -120,12 +148,18 @@ export default function MedicationReminders() {
       remaining: 30
     };
 
-    setMedications((prev) => [...prev, newMed]);
+    setMedications((prev) => {
+      const updated = [...prev, newMed];
+      try {
+        localStorage.setItem(medsStorageKey, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     setMedName('');
     setMedDosage('');
     setMedInstructions('');
     setAddModalOpen(false);
-    showToast(`Added ${newMed.name} to adherence schedule.`);
+    showToast(`Added ${newMed.name} to medication schedule!`);
   };
 
   const takenCount = medications.filter((m) => m.taken).length;
@@ -254,67 +288,77 @@ export default function MedicationReminders() {
         </div>
 
         <div className="space-y-3.5">
-          {medications.map((m) => (
-            <div
-              key={m.id}
-              className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                m.taken
-                  ? 'bg-[#E4F5EC]/50 border-[#2E9E6B]/30'
-                  : 'bg-[#FFF8F9] border-[#F6E3E8] hover:border-[#E8758F]'
-              }`}
-            >
-              <div className="flex items-start gap-3.5">
-                <button
-                  type="button"
-                  onClick={() => handleToggleTaken(m.id)}
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 transition-all ${
-                    m.taken
-                      ? 'bg-[#2E9E6B] text-white shadow-xs'
-                      : 'border-2 border-[#E8758F] hover:border-[#C2456B] bg-white'
-                  }`}
-                >
-                  {m.taken && <CheckCircle size={18} />}
-                </button>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h4 className={`text-sm font-bold ${m.taken ? 'line-through text-[#8A7580]' : 'text-[#3B2A33]'}`}>
-                      {m.name}
-                    </h4>
-                    <span className="text-[10px] font-bold text-[#C2456B] px-2.5 py-0.5 rounded-full bg-[#FCE4EC] border border-[#F6E3E8]">
-                      {m.dosage}
+          {medications.length > 0 ? (
+            medications.map((m) => (
+              <div
+                key={m.id}
+                className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                  m.taken
+                    ? 'bg-[#E4F5EC]/50 border-[#2E9E6B]/30'
+                    : 'bg-[#FFF8F9] border-[#F6E3E8] hover:border-[#E8758F]'
+                }`}
+              >
+                <div className="flex items-start gap-3.5">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleTaken(m.id)}
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 transition-all ${
+                      m.taken
+                        ? 'bg-[#2E9E6B] text-white shadow-xs'
+                        : 'border-2 border-[#E8758F] hover:border-[#C2456B] bg-white'
+                    }`}
+                  >
+                    {m.taken && <CheckCircle size={18} />}
+                  </button>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h4 className={`text-sm font-bold ${m.taken ? 'line-through text-[#8A7580]' : 'text-[#3B2A33]'}`}>
+                        {m.name}
+                      </h4>
+                      <span className="text-[10px] font-bold text-[#C2456B] px-2.5 py-0.5 rounded-full bg-[#FCE4EC] border border-[#F6E3E8]">
+                        {m.dosage}
+                      </span>
+                      <span className="text-[10px] font-semibold text-[#8A7580] bg-white px-2 py-0.5 rounded-full border border-[#F6E3E8]">
+                        {m.type}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#8A7580] leading-relaxed">{m.instructions}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3.5 shrink-0 self-end sm:self-auto">
+                  <div className="text-right">
+                    <span className="text-xs font-mono font-bold text-[#3B2A33] flex items-center gap-1 justify-end">
+                      <Clock size={13} className="text-[#8A7580]" />
+                      {m.time}
                     </span>
-                    <span className="text-[10px] font-semibold text-[#8A7580] bg-white px-2 py-0.5 rounded-full border border-[#F6E3E8]">
-                      {m.type}
+                    <span className={`text-[10px] font-bold block ${m.taken ? 'text-[#2E9E6B]' : 'text-amber-700'}`}>
+                      {m.taken ? 'Completed ✓' : 'Pending Dose'}
                     </span>
                   </div>
-                  <p className="text-xs text-[#8A7580] leading-relaxed">{m.instructions}</p>
+
+                  <button
+                    onClick={() => handleToggleTaken(m.id)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                      m.taken
+                        ? 'bg-white hover:bg-stone-50 text-[#8A7580] border border-[#F6E3E8]'
+                        : 'bg-[#C2456B] hover:bg-[#b03d60] text-white shadow-sm shadow-[#C2456B]/20'
+                    }`}
+                  >
+                    {m.taken ? 'Undo' : 'Mark Taken'}
+                  </button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3.5 shrink-0 self-end sm:self-auto">
-                <div className="text-right">
-                  <span className="text-xs font-mono font-bold text-[#3B2A33] flex items-center gap-1 justify-end">
-                    <Clock size={13} className="text-[#8A7580]" />
-                    {m.time}
-                  </span>
-                  <span className={`text-[10px] font-bold block ${m.taken ? 'text-[#2E9E6B]' : 'text-amber-700'}`}>
-                    {m.taken ? 'Completed ✓' : 'Pending Dose'}
-                  </span>
-                </div>
-
-                <button
-                  onClick={() => handleToggleTaken(m.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                    m.taken
-                      ? 'bg-white hover:bg-stone-50 text-[#8A7580] border border-[#F6E3E8]'
-                      : 'bg-[#C2456B] hover:bg-[#b03d60] text-white shadow-sm shadow-[#C2456B]/20'
-                  }`}
-                >
-                  {m.taken ? 'Undo' : 'Mark Taken'}
-                </button>
-              </div>
+            ))
+          ) : (
+            <div className="p-8 rounded-2xl bg-[#FFF8F9] border border-dashed border-[#F6E3E8] text-center space-y-2">
+              <Pill className="w-8 h-8 text-[#8A7580] mx-auto opacity-50" />
+              <h4 className="text-sm font-bold text-[#3B2A33]">No Medications or Supplements Scheduled</h4>
+              <p className="text-xs text-[#8A7580] max-w-sm mx-auto">
+                Your prescription list is empty. Click "+ Add Medication" above to configure your daily reminders and dosage alarms.
+              </p>
             </div>
-          ))}
+          )}
         </div>
       </div>
 

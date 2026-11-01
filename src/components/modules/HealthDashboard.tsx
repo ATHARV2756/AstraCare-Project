@@ -25,12 +25,22 @@ import {
   Clock
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { isDemoUser } from '../../data/demoAccounts';
 
 export default function HealthDashboard() {
   const { user, setCurrentRoute, language, t } = useApp();
+  const isDemo = isDemoUser(user?.email);
 
-  // Interactive dashboard state
-  const [hydration, setHydration] = useState<number>(1750);
+  // Scoped hydration state (persisted per-user)
+  const hydrationStorageKey = `astracare_hydration_${user?.email || 'guest'}`;
+  const [hydration, setHydration] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(hydrationStorageKey);
+      if (stored !== null) return Number(stored);
+    } catch {}
+    return isDemo ? 1750 : 0;
+  });
+
   const hydrationGoal = 2500;
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [checkInModalOpen, setCheckInModalOpen] = useState(false);
@@ -41,7 +51,7 @@ export default function HealthDashboard() {
   const [checkInEnergy, setCheckInEnergy] = useState(4);
   const [checkInStress, setCheckInStress] = useState(3);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
-  const [healthScore, setHealthScore] = useState<number>(88);
+  const [healthScore, setHealthScore] = useState<number>(isDemo ? 88 : 75);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -51,6 +61,9 @@ export default function HealthDashboard() {
   const handleAddWater = (amount: number) => {
     const updated = Math.min(hydration + amount, 4000);
     setHydration(updated);
+    try {
+      localStorage.setItem(hydrationStorageKey, updated.toString());
+    } catch {}
     showToast(`Added ${amount}ml water! (${updated} / ${hydrationGoal}ml)`);
   };
 

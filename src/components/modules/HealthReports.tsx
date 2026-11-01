@@ -22,9 +22,11 @@ import {
   Archive
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { isDemoUser } from '../../data/demoAccounts';
 
 export default function HealthReports() {
   const { user } = useApp();
+  const isDemo = isDemoUser(user?.email);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -45,8 +47,8 @@ export default function HealthReports() {
     URL.revokeObjectURL(url);
   };
 
-  // Biomarkers lab test history
-  const biomarkers = [
+  // Biomarkers lab test history (scoped to demo vs new users)
+  const demoBiomarkers = [
     { test: 'Hemoglobin (Hb)', result: '12.8 g/dL', ref: '12.0 – 15.5 g/dL', status: 'Optimal', date: 'Oct 15, 2026' },
     { test: 'Serum Ferritin', result: '48 ng/mL', ref: '20 – 150 ng/mL', status: 'Optimal', date: 'Oct 15, 2026' },
     { test: 'Fasting Blood Glucose', result: '88 mg/dL', ref: '70 – 99 mg/dL', status: 'Normal', date: 'Oct 15, 2026' },
@@ -55,8 +57,10 @@ export default function HealthReports() {
     { test: 'Serum 25-OH Vitamin D', result: '38 ng/mL', ref: '30 – 100 ng/mL', status: 'Sufficient', date: 'Oct 15, 2026' }
   ];
 
-  // Past reports archive with detailed clinical telemetry
-  const pastReports = [
+  const biomarkers = isDemo ? demoBiomarkers : [];
+
+  // Past reports archive (scoped to demo vs new users)
+  const demoPastReports = [
     {
       id: 'rep-1',
       title: 'Q3 Comprehensive Reproductive Dossier',
@@ -121,6 +125,8 @@ export default function HealthReports() {
       ]
     }
   ];
+
+  const pastReports = isDemo ? demoPastReports : [];
 
   // Helper to generate printable hospital-grade clinical HTML dossier
   const buildDossierHTML = (
@@ -669,13 +675,13 @@ export default function HealthReports() {
           </p>
         </div>
 
-        {/* Action Controls - Perfectly aligned: single row on desktop, balanced 2x2 grid on mobile */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 xl:flex xl:flex-nowrap items-center gap-2.5 shrink-0">
+        {/* Action Controls - Perfectly aligned: single row of 4 on desktop/tablet, balanced 2x2 grid on mobile */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full xl:w-auto shrink-0">
           <button
             id="btn-generate-summary"
             onClick={handleGenerateReport}
             disabled={isGenerating}
-            className="px-4 py-3 bg-[#C2456B] hover:bg-[#b03d60] active:bg-[#993452] text-white rounded-2xl text-xs font-bold shadow-md shadow-[#C2456B]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
+            className="px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#C2456B] hover:bg-[#b03d60] active:bg-[#993452] text-white rounded-2xl text-xs font-bold shadow-md shadow-[#C2456B]/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
           >
             <Sparkles size={15} className={isGenerating ? 'animate-spin' : ''} />
             <span>{isGenerating ? 'Compiling...' : 'Generate Summary'}</span>
@@ -683,7 +689,7 @@ export default function HealthReports() {
           <button
             id="btn-download-dossier"
             onClick={handleDownloadActiveDossier}
-            className="px-4 py-3 bg-[#C2456B] hover:bg-[#b03d60] text-white rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs whitespace-nowrap"
+            className="px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#C2456B] hover:bg-[#b03d60] text-white rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs whitespace-nowrap"
             title="Download complete standalone Clinical Dossier (PDF/HTML)"
           >
             <Download size={15} />
@@ -692,7 +698,7 @@ export default function HealthReports() {
           <button
             id="btn-print-report"
             onClick={handlePrintReport}
-            className="px-4 py-3 bg-[#FFF8F9] hover:bg-[#FCE4EC] border border-[#F6E3E8] text-[#3B2A33] rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+            className="px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#FFF8F9] hover:bg-[#FCE4EC] border border-[#F6E3E8] text-[#3B2A33] rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap"
           >
             <Printer size={15} className="text-[#C2456B]" />
             <span>Print PDF</span>
@@ -700,7 +706,7 @@ export default function HealthReports() {
           <button
             id="btn-export-json"
             onClick={handleDownloadJSON}
-            className="px-4 py-3 bg-[#3B2A33] hover:bg-[#2C1F26] text-white rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs whitespace-nowrap"
+            className="px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#3B2A33] hover:bg-[#2C1F26] text-white rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs whitespace-nowrap"
           >
             <Download size={15} />
             <span>Export JSON</span>
@@ -713,15 +719,21 @@ export default function HealthReports() {
         <div className="p-6 sm:p-7 rounded-3xl bg-white border border-[#F6E3E8] shadow-[0_4px_20px_rgba(194,69,107,0.03)] space-y-2 hover:border-[#E8758F] transition-all">
           <span className="text-xs font-bold text-[#8A7580] uppercase tracking-wider block">Doctor Sharing Consent</span>
           <span className="text-xl font-serif font-bold text-[#3B2A33] block">
-            {user?.lifeStage === 'pregnancy' ? 'Dr. Sunita Rao (OB/GYN)' : 'Dr. Anjali Mehta (Gynecologist)'}
+            {isDemo 
+              ? (user?.lifeStage === 'pregnancy' ? 'Dr. Sunita Rao (OB/GYN)' : 'Dr. Anjali Mehta (Gynecologist)')
+              : (user?.consents?.doctorSharing ? 'Consent Active (Ready for Review)' : 'Sharing Disabled')}
           </span>
           <span className="text-xs text-[#2E9E6B] font-bold block">✓ End-to-End Encrypted Access Active</span>
         </div>
 
         <div className="p-6 sm:p-7 rounded-3xl bg-white border border-[#F6E3E8] shadow-[0_4px_20px_rgba(194,69,107,0.03)] space-y-2 hover:border-[#E8758F] transition-all">
           <span className="text-xs font-bold text-[#8A7580] uppercase tracking-wider block">Compiled Dossiers</span>
-          <span className="text-3xl sm:text-4xl font-serif font-black text-[#C2456B] block">4 Records</span>
-          <span className="text-xs text-[#8A7580] block">Past 90 Days High-Res Biosensor Telemetry</span>
+          <span className="text-3xl sm:text-4xl font-serif font-black text-[#C2456B] block">
+            {isDemo ? '4 Records' : `${pastReports.length} Records`}
+          </span>
+          <span className="text-xs text-[#8A7580] block">
+            {isDemo ? 'Past 90 Days High-Res Biosensor Telemetry' : (pastReports.length > 0 ? 'Longitudinal Clinical Records' : 'New Account • Telemetry Baseline Initialized')}
+          </span>
         </div>
 
         <div className="p-6 sm:p-7 rounded-3xl bg-white border border-[#F6E3E8] shadow-[0_4px_20px_rgba(194,69,107,0.03)] space-y-2 hover:border-[#E8758F] transition-all">
@@ -855,15 +867,23 @@ export default function HealthReports() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F6E3E8]">
-                {biomarkers.map((b) => (
-                  <tr key={b.test} className="hover:bg-[#FFF8F9]">
-                    <td className="py-2.5 font-bold text-[#3B2A33]">{b.test}</td>
-                    <td className="py-2.5 font-serif font-black text-[#C2456B]">{b.result}</td>
-                    <td className="py-2.5 text-[#8A7580]">{b.ref}</td>
-                    <td className="py-2.5 font-bold text-[#2E9E6B]">{b.status}</td>
-                    <td className="py-2.5 text-[#8A7580] font-mono">{b.date}</td>
+                {biomarkers.length > 0 ? (
+                  biomarkers.map((b) => (
+                    <tr key={b.test} className="hover:bg-[#FFF8F9]">
+                      <td className="py-2.5 font-bold text-[#3B2A33]">{b.test}</td>
+                      <td className="py-2.5 font-serif font-black text-[#C2456B]">{b.result}</td>
+                      <td className="py-2.5 text-[#8A7580]">{b.ref}</td>
+                      <td className="py-2.5 font-bold text-[#2E9E6B]">{b.status}</td>
+                      <td className="py-2.5 text-[#8A7580] font-mono">{b.date}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-xs text-[#8A7580] italic">
+                      No laboratory biomarker records uploaded yet. Laboratory test panels will appear here once submitted or verified during clinical reviews.
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -876,17 +896,23 @@ export default function HealthReports() {
               Attending Physician Consultation Remarks
             </span>
             <div className="p-4 rounded-xl border border-dashed border-[#F6E3E8] min-h-[70px] text-[#8A7580] italic leading-relaxed">
-              "Patient exhibits stable follicular telemetry and excellent autonomic HRV recovery. Continued compliance with prescribed micronutrients (Iron & Vitamin D3) is recommended. Follow-up consultation scheduled for next routine check."
+              {isDemo
+                ? '"Patient exhibits stable follicular telemetry and excellent autonomic HRV recovery. Continued compliance with prescribed micronutrients (Iron & Vitamin D3) is recommended. Follow-up consultation scheduled for next routine check."'
+                : '"New patient baseline intake recorded. Ongoing telemetry monitoring enabled. Follow-up consultation recommended to establish personalized clinical protocols."'}
             </div>
           </div>
 
           <div className="flex flex-col justify-end text-right space-y-1">
             <div className="border-b border-[#3B2A33] w-52 ml-auto pb-1">
               <span className="font-serif italic font-bold text-[#3B2A33] text-sm">
-                {user?.lifeStage === 'pregnancy' ? 'Dr. Sunita Rao, MD (OB/GYN)' : 'Dr. Anjali Mehta, MD (OB/GYN)'}
+                {isDemo
+                  ? (user?.lifeStage === 'pregnancy' ? 'Dr. Sunita Rao, MD (OB/GYN)' : 'Dr. Anjali Mehta, MD (OB/GYN)')
+                  : 'Clinical Review Pending Assignment'}
               </span>
             </div>
-            <span className="text-[10px] text-[#8A7580] font-mono">Board Certified Obstetrician & Gynecologist • Reg #MH-84210</span>
+            <span className="text-[10px] text-[#8A7580] font-mono">
+              {isDemo ? 'Board Certified Obstetrician & Gynecologist • Reg #MH-84210' : 'Registered Clinician Network • AstraCare Health Portal'}
+            </span>
           </div>
         </div>
 
@@ -903,54 +929,66 @@ export default function HealthReports() {
             <span className="text-xs text-[#8A7580] font-medium">Download historical clinical dossiers and multi-quarter telemetry records</span>
           </div>
           
-          <button
-            id="btn-export-full-history-json"
-            onClick={handleExportFullHistoricalArchive}
-            className="px-4 py-2.5 bg-[#FFF8F9] hover:bg-[#FCE4EC] border border-[#F6E3E8] text-[#C2456B] rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs self-start sm:self-auto"
-          >
-            <Archive size={14} />
-            <span>Export Full Historical Archive (JSON)</span>
-          </button>
+          {pastReports.length > 0 && (
+            <button
+              id="btn-export-full-history-json"
+              onClick={handleExportFullHistoricalArchive}
+              className="px-4 py-2.5 bg-[#FFF8F9] hover:bg-[#FCE4EC] border border-[#F6E3E8] text-[#C2456B] rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-2xs self-start sm:self-auto"
+            >
+              <Archive size={14} />
+              <span>Export Full Historical Archive (JSON)</span>
+            </button>
+          )}
         </div>
 
         <div className="space-y-3">
-          {pastReports.map((p) => (
-            <div
-              key={p.id}
-              className="p-4 sm:p-5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#E8758F] transition-all"
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#FCE4EC] flex items-center justify-center text-[#C2456B] shrink-0">
-                  <FileText size={20} />
+          {pastReports.length > 0 ? (
+            pastReports.map((p) => (
+              <div
+                key={p.id}
+                className="p-4 sm:p-5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#E8758F] transition-all"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#FCE4EC] flex items-center justify-center text-[#C2456B] shrink-0">
+                    <FileText size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-[#3B2A33]">{p.title}</h4>
+                    <span className="text-xs text-[#8A7580]">{p.date} • {p.size} • Verified by {p.doctor}</span>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-[#3B2A33]">{p.title}</h4>
-                  <span className="text-xs text-[#8A7580]">{p.date} • {p.size} • Verified by {p.doctor}</span>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                <button
-                  id={`btn-download-html-${p.id}`}
-                  onClick={() => handleDownloadHistoricalReport(p, 'html')}
-                  className="px-3.5 py-2 bg-white hover:bg-stone-50 border border-[#F6E3E8] text-[#C2456B] rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
-                  title="Download standalone printable HTML/PDF Dossier"
-                >
-                  <Download size={14} />
-                  <span>Download Dossier (PDF)</span>
-                </button>
-                <button
-                  id={`btn-download-json-${p.id}`}
-                  onClick={() => handleDownloadHistoricalReport(p, 'json')}
-                  className="px-3.5 py-2 bg-white hover:bg-stone-50 border border-[#F6E3E8] text-[#3B2A33] rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
-                  title="Download structured JSON record"
-                >
-                  <Download size={14} />
-                  <span>JSON</span>
-                </button>
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  <button
+                    id={`btn-download-html-${p.id}`}
+                    onClick={() => handleDownloadHistoricalReport(p, 'html')}
+                    className="px-3.5 py-2 bg-white hover:bg-stone-50 border border-[#F6E3E8] text-[#C2456B] rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+                    title="Download standalone printable HTML/PDF Dossier"
+                  >
+                    <Download size={14} />
+                    <span>Download Dossier (PDF)</span>
+                  </button>
+                  <button
+                    id={`btn-download-json-${p.id}`}
+                    onClick={() => handleDownloadHistoricalReport(p, 'json')}
+                    className="px-3.5 py-2 bg-white hover:bg-stone-50 border border-[#F6E3E8] text-[#3B2A33] rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+                    title="Download structured JSON record"
+                  >
+                    <Download size={14} />
+                    <span>JSON</span>
+                  </button>
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="p-8 rounded-2xl bg-[#FFF8F9] border border-dashed border-[#F6E3E8] text-center space-y-2">
+              <FileText className="w-8 h-8 text-[#8A7580] mx-auto opacity-50" />
+              <h4 className="text-sm font-bold text-[#3B2A33]">No Historical Medical Dossiers Yet</h4>
+              <p className="text-xs text-[#8A7580] max-w-md mx-auto">
+                Welcome to AstraCare AI! As you record your daily biosensor telemetry and complete consultations, quarterly verifiable medical dossiers will be compiled and archived here.
+              </p>
             </div>
-          ))}
+          )}
         </div>
       </div>
 

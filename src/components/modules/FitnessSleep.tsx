@@ -25,6 +25,7 @@ import {
   Award
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { isDemoUser } from '../../data/demoAccounts';
 
 interface WorkoutItem {
   id: string;
@@ -35,9 +36,38 @@ interface WorkoutItem {
   time: string;
 }
 
+const demoWorkouts: WorkoutItem[] = [
+  {
+    id: 'w1',
+    type: 'Morning Power Walk',
+    duration: 35,
+    calories: 195,
+    intensity: 'Moderate',
+    time: '07:30 AM'
+  },
+  {
+    id: 'w2',
+    type: 'Strength & Core Training',
+    duration: 40,
+    calories: 235,
+    intensity: 'High',
+    time: '05:45 PM'
+  }
+];
+
 export default function FitnessSleep() {
   const { user } = useApp();
-  const [steps, setSteps] = useState(8420);
+  const isDemo = isDemoUser(user?.email);
+
+  const stepsStorageKey = `astracare_steps_${user?.email || 'guest'}`;
+  const [steps, setSteps] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(stepsStorageKey);
+      if (stored !== null) return Number(stored);
+    } catch {}
+    return isDemo ? 8420 : 0;
+  });
+
   const stepsTarget = 10000;
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [logModalOpen, setLogModalOpen] = useState(false);
@@ -47,24 +77,14 @@ export default function FitnessSleep() {
   const [activityDuration, setActivityDuration] = useState(30);
   const [activityIntensity, setActivityIntensity] = useState<'Low' | 'Moderate' | 'High'>('Moderate');
 
-  const [workouts, setWorkouts] = useState<WorkoutItem[]>([
-    {
-      id: 'w1',
-      type: 'Morning Power Walk',
-      duration: 35,
-      calories: 195,
-      intensity: 'Moderate',
-      time: '07:30 AM'
-    },
-    {
-      id: 'w2',
-      type: 'Strength & Core Training',
-      duration: 40,
-      calories: 235,
-      intensity: 'High',
-      time: '05:45 PM'
-    }
-  ]);
+  const workoutsStorageKey = `astracare_workouts_${user?.email || 'guest'}`;
+  const [workouts, setWorkouts] = useState<WorkoutItem[]>(() => {
+    try {
+      const stored = localStorage.getItem(workoutsStorageKey);
+      if (stored !== null) return JSON.parse(stored);
+    } catch {}
+    return isDemo ? demoWorkouts : [];
+  });
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -83,8 +103,22 @@ export default function FitnessSleep() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    setWorkouts((prev) => [newW, ...prev]);
-    setSteps((prev) => prev + activityDuration * 75);
+    setWorkouts((prev) => {
+      const updated = [newW, ...prev];
+      try {
+        localStorage.setItem(workoutsStorageKey, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    setSteps((prev) => {
+      const nextSteps = prev + activityDuration * 75;
+      try {
+        localStorage.setItem(stepsStorageKey, nextSteps.toString());
+      } catch {}
+      return nextSteps;
+    });
+
     setLogModalOpen(false);
     showToast(`Logged ${activityDuration}m of ${activityType}! (+${estCal} kcal burn)`);
   };
@@ -421,20 +455,30 @@ export default function FitnessSleep() {
           </div>
 
           <div className="space-y-3">
-            {workouts.map((w) => (
-              <div key={w.id} className="p-4 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] flex items-center justify-between hover:border-[#E8758F] transition-all">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md bg-[#FCE4EC] text-[#C2456B]">
-                    {w.intensity} Intensity • {w.time}
-                  </span>
-                  <h4 className="text-sm font-bold text-[#3B2A33]">{w.type}</h4>
+            {workouts.length > 0 ? (
+              workouts.map((w) => (
+                <div key={w.id} className="p-4 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] flex items-center justify-between hover:border-[#E8758F] transition-all">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md bg-[#FCE4EC] text-[#C2456B]">
+                      {w.intensity} Intensity • {w.time}
+                    </span>
+                    <h4 className="text-sm font-bold text-[#3B2A33]">{w.type}</h4>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-base font-serif font-black text-[#3B2A33] block">{w.calories} kcal</span>
+                    <span className="text-xs text-[#8A7580] font-medium">{w.duration} mins</span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-base font-serif font-black text-[#3B2A33] block">{w.calories} kcal</span>
-                  <span className="text-xs text-[#8A7580] font-medium">{w.duration} mins</span>
-                </div>
+              ))
+            ) : (
+              <div className="p-8 rounded-2xl bg-[#FFF8F9] border border-dashed border-[#F6E3E8] text-center space-y-2">
+                <Activity className="w-8 h-8 text-[#8A7580] mx-auto opacity-50" />
+                <h4 className="text-sm font-bold text-[#3B2A33]">No Workouts Logged Today</h4>
+                <p className="text-xs text-[#8A7580] max-w-sm mx-auto">
+                  Your activity log is clean. Click "+ Log Workout" above to record a morning walk, strength training, or yoga session.
+                </p>
               </div>
-            ))}
+            )}
           </div>
         </div>
 

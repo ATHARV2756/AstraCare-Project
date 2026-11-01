@@ -21,6 +21,7 @@ import {
   Heart
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { isDemoUser } from '../../data/demoAccounts';
 
 interface MealItem {
   id: string;
@@ -33,9 +34,52 @@ interface MealItem {
   time: string;
 }
 
+const demoMeals: MealItem[] = [
+  {
+    id: 'm1',
+    name: 'Organic Rolled Oats with Chia, Blueberries & Almond Butter',
+    calories: 380,
+    protein: 14,
+    carbs: 56,
+    fats: 12,
+    type: 'Breakfast',
+    time: '08:15 AM'
+  },
+  {
+    id: 'm2',
+    name: 'Quinoa Grain Bowl with Grilled Paneer, Spinach & Tahini',
+    calories: 520,
+    protein: 24,
+    carbs: 58,
+    fats: 22,
+    type: 'Lunch',
+    time: '01:10 PM'
+  },
+  {
+    id: 'm3',
+    name: 'Handful of Walnuts, Roasted Makhana & Pumpkin Seeds',
+    calories: 210,
+    protein: 7,
+    carbs: 16,
+    fats: 14,
+    type: 'Snack',
+    time: '04:30 PM'
+  }
+];
+
 export default function NutritionHydration() {
   const { user } = useApp();
-  const [hydration, setHydration] = useState(1750); // ml
+  const isDemo = isDemoUser(user?.email);
+
+  const hydrationStorageKey = `astracare_hydration_${user?.email || 'guest'}`;
+  const [hydration, setHydration] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(hydrationStorageKey);
+      if (stored !== null) return Number(stored);
+    } catch {}
+    return isDemo ? 1750 : 0;
+  });
+
   const hydrationGoal = 2500; // ml
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [addMealModalOpen, setAddMealModalOpen] = useState(false);
@@ -48,38 +92,14 @@ export default function NutritionHydration() {
   const [mealFats, setMealFats] = useState(12);
   const [mealType, setMealType] = useState<'Breakfast' | 'Lunch' | 'Snack' | 'Dinner'>('Lunch');
 
-  const [meals, setMeals] = useState<MealItem[]>([
-    {
-      id: 'm1',
-      name: 'Organic Rolled Oats with Chia, Blueberries & Almond Butter',
-      calories: 380,
-      protein: 14,
-      carbs: 56,
-      fats: 12,
-      type: 'Breakfast',
-      time: '08:15 AM'
-    },
-    {
-      id: 'm2',
-      name: 'Quinoa Grain Bowl with Grilled Paneer, Spinach & Tahini',
-      calories: 520,
-      protein: 24,
-      carbs: 58,
-      fats: 22,
-      type: 'Lunch',
-      time: '01:10 PM'
-    },
-    {
-      id: 'm3',
-      name: 'Handful of Walnuts, Roasted Makhana & Pumpkin Seeds',
-      calories: 210,
-      protein: 7,
-      carbs: 16,
-      fats: 14,
-      type: 'Snack',
-      time: '04:30 PM'
-    }
-  ]);
+  const mealsStorageKey = `astracare_meals_${user?.email || 'guest'}`;
+  const [meals, setMeals] = useState<MealItem[]>(() => {
+    try {
+      const stored = localStorage.getItem(mealsStorageKey);
+      if (stored !== null) return JSON.parse(stored);
+    } catch {}
+    return isDemo ? demoMeals : [];
+  });
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -87,7 +107,13 @@ export default function NutritionHydration() {
   };
 
   const handleAddWater = (amount: number) => {
-    setHydration((prev) => Math.min(hydrationGoal + 1000, prev + amount));
+    setHydration((prev) => {
+      const next = Math.min(hydrationGoal + 1000, prev + amount);
+      try {
+        localStorage.setItem(hydrationStorageKey, next.toString());
+      } catch {}
+      return next;
+    });
     showToast(`Logged +${amount} ml of water!`);
   };
 
@@ -106,7 +132,13 @@ export default function NutritionHydration() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    setMeals((prev) => [newMeal, ...prev]);
+    setMeals((prev) => {
+      const updated = [newMeal, ...prev];
+      try {
+        localStorage.setItem(mealsStorageKey, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     setMealName('');
     setAddMealModalOpen(false);
     showToast(`Logged ${mealName} successfully!`);
@@ -394,23 +426,33 @@ export default function NutritionHydration() {
         </div>
 
         <div className="space-y-3">
-          {meals.map((m) => (
-            <div key={m.id} className="p-4 sm:p-5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#E8758F] transition-all">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-md bg-[#FCE4EC] text-[#C2456B]">
-                  {m.type} • {m.time}
-                </span>
-                <h4 className="text-sm font-bold text-[#3B2A33]">{m.name}</h4>
-              </div>
+          {meals.length > 0 ? (
+            meals.map((m) => (
+              <div key={m.id} className="p-4 sm:p-5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#E8758F] transition-all">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-md bg-[#FCE4EC] text-[#C2456B]">
+                    {m.type} • {m.time}
+                  </span>
+                  <h4 className="text-sm font-bold text-[#3B2A33]">{m.name}</h4>
+                </div>
 
-              <div className="flex items-center gap-4 text-xs font-mono text-[#3B2A33]">
-                <span className="font-bold text-base text-[#3B2A33]">{m.calories} kcal</span>
-                <span className="text-[#C2456B] font-bold">P: {m.protein}g</span>
-                <span className="text-amber-700 font-bold">C: {m.carbs}g</span>
-                <span className="text-purple-700 font-bold">F: {m.fats}g</span>
+                <div className="flex items-center gap-4 text-xs font-mono text-[#3B2A33]">
+                  <span className="font-bold text-base text-[#3B2A33]">{m.calories} kcal</span>
+                  <span className="text-[#C2456B] font-bold">P: {m.protein}g</span>
+                  <span className="text-amber-700 font-bold">C: {m.carbs}g</span>
+                  <span className="text-purple-700 font-bold">F: {m.fats}g</span>
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="p-8 rounded-2xl bg-[#FFF8F9] border border-dashed border-[#F6E3E8] text-center space-y-2">
+              <Utensils className="w-8 h-8 text-[#8A7580] mx-auto opacity-50" />
+              <h4 className="text-sm font-bold text-[#3B2A33]">No Meals Logged Today</h4>
+              <p className="text-xs text-[#8A7580] max-w-sm mx-auto">
+                Your nutrition diary is empty. Click "+ Log Meal" above to record your breakfast, lunch, dinner, or healthy snacks.
+              </p>
             </div>
-          ))}
+          )}
         </div>
       </div>
 

@@ -24,9 +24,28 @@ import {
   Headphones
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { isDemoUser } from '../../data/demoAccounts';
+
+const demoReflections = [
+  {
+    id: 'r1',
+    date: 'Yesterday, Oct 30',
+    mood: 'Energized & Focused 🌸',
+    stress: 2,
+    note: 'Felt very energized following morning sunlight walk. Completed pilates workout smoothly.'
+  },
+  {
+    id: 'r2',
+    date: 'Wed, Oct 28',
+    mood: 'Calm / Peaceful 🌿',
+    stress: 4,
+    note: 'Practiced 10 mins box breathing before bedtime. Deep sleep score reached 89%.'
+  }
+];
 
 export default function MentalWellness() {
   const { user } = useApp();
+  const isDemo = isDemoUser(user?.email);
   const [selectedMood, setSelectedMood] = useState<string>('Calm / Peaceful');
   const [stressScore, setStressScore] = useState<number>(3);
   const [journalNotes, setJournalNotes] = useState<string>('');
@@ -38,27 +57,41 @@ export default function MentalWellness() {
   const [breathCount, setBreathCount] = useState(4);
   const [activeAudioIndex, setActiveAudioIndex] = useState<number | null>(null);
 
-  // Reflection logs
-  const [reflectionLogs, setReflectionLogs] = useState([
-    {
-      id: 'r1',
-      date: 'Yesterday, Oct 30',
-      mood: 'Energized & Focused 🌸',
-      stress: 2,
-      note: 'Felt very energized following morning sunlight walk. Completed pilates workout smoothly.'
-    },
-    {
-      id: 'r2',
-      date: 'Wed, Oct 28',
-      mood: 'Calm / Peaceful 🌿',
-      stress: 4,
-      note: 'Practiced 10 mins box breathing before bedtime. Deep sleep score reached 89%.'
-    }
-  ]);
+  // Scoped reflection logs
+  const reflectionsStorageKey = `astracare_reflections_${user?.email || 'guest'}`;
+  const [reflectionLogs, setReflectionLogs] = useState(() => {
+    try {
+      const stored = localStorage.getItem(reflectionsStorageKey);
+      if (stored !== null) return JSON.parse(stored);
+    } catch {}
+    return isDemo ? demoReflections : [];
+  });
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleSaveWellness = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (journalNotes.trim()) {
+      const newLog = {
+        id: Math.random().toString(36).substring(2, 9),
+        date: 'Today, Just now',
+        mood: selectedMood,
+        stress: stressScore,
+        note: journalNotes
+      };
+      setReflectionLogs((prev) => {
+        const updated = [newLog, ...prev];
+        try {
+          localStorage.setItem(reflectionsStorageKey, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+    }
+    showToast(`Wellness check-in recorded! Mood: ${selectedMood}, Stress: ${stressScore}/10.`);
+    setJournalNotes('');
   };
 
   useEffect(() => {
@@ -84,24 +117,6 @@ export default function MentalWellness() {
 
     return () => clearInterval(interval);
   }, [isBreathing, breathPhase]);
-
-  const handleSaveWellness = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (journalNotes.trim()) {
-      setReflectionLogs((prev) => [
-        {
-          id: Math.random().toString(36).substring(2, 9),
-          date: 'Today, Just now',
-          mood: selectedMood,
-          stress: stressScore,
-          note: journalNotes
-        },
-        ...prev
-      ]);
-    }
-    showToast(`Wellness check-in recorded! Mood: ${selectedMood}, Stress: ${stressScore}/10.`);
-    setJournalNotes('');
-  };
 
   const moods = [
     { label: 'Energized', emoji: '🌸', desc: 'Active & motivated' },
@@ -399,20 +414,30 @@ export default function MentalWellness() {
           </div>
 
           <div className="space-y-3">
-            {reflectionLogs.map((log) => (
-              <div key={log.id} className="p-4 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] space-y-1.5 hover:border-[#E8758F] transition-all">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-[#C2456B]">{log.mood}</span>
-                  <span className="text-[11px] text-[#8A7580] font-medium">{log.date}</span>
+            {reflectionLogs.length > 0 ? (
+              reflectionLogs.map((log) => (
+                <div key={log.id} className="p-4 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] space-y-1.5 hover:border-[#E8758F] transition-all">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-[#C2456B]">{log.mood}</span>
+                    <span className="text-[11px] text-[#8A7580] font-medium">{log.date}</span>
+                  </div>
+                  <p className="text-xs text-[#3B2A33] leading-relaxed">
+                    "{log.note}"
+                  </p>
+                  <div className="text-[10px] text-[#8A7580] pt-0.5">
+                    Reported Tension: {log.stress}/10 • Autonomic balance verified
+                  </div>
                 </div>
-                <p className="text-xs text-[#3B2A33] leading-relaxed">
-                  "{log.note}"
+              ))
+            ) : (
+              <div className="p-8 rounded-2xl bg-[#FFF8F9] border border-dashed border-[#F6E3E8] text-center space-y-2">
+                <Heart className="w-8 h-8 text-[#8A7580] mx-auto opacity-50" />
+                <h4 className="text-sm font-bold text-[#3B2A33]">No Reflection Journals Yet</h4>
+                <p className="text-xs text-[#8A7580] max-w-sm mx-auto">
+                  Your mental wellness diary is clean. Record your mood, stress level, and thoughts on the left to begin tracking emotional patterns.
                 </p>
-                <div className="text-[10px] text-[#8A7580] pt-0.5">
-                  Reported Tension: {log.stress}/10 • Autonomic balance verified
-                </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
 

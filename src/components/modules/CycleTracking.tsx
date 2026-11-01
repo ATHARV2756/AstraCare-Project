@@ -21,12 +21,28 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/apiClient';
+import { isDemoUser } from '../../data/demoAccounts';
 
 export default function CycleTracking() {
   const { user, setCurrentRoute } = useApp();
+  const isDemo = isDemoUser(user?.email);
 
-  // Cycle state
-  const [currentDay, setCurrentDay] = useState<number>(11);
+  // Cycle state - dynamically calculated from user's last period or default to Day 1 for new users
+  const calculateInitialCycleDay = () => {
+    if (isDemo) return 11;
+    if (user?.menstrualHistory?.lastPeriodDate) {
+      const last = new Date(user.menstrualHistory.lastPeriodDate).getTime();
+      const now = new Date().getTime();
+      const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
+      const userCycle = user.menstrualHistory.cycleLength || 28;
+      if (diffDays >= 0 && diffDays < userCycle) {
+        return diffDays + 1;
+      }
+    }
+    return 1;
+  };
+
+  const [currentDay, setCurrentDay] = useState<number>(calculateInitialCycleDay);
   const cycleLength = user?.menstrualHistory?.cycleLength || 28;
   const isPregnancy = user?.lifeStage === 'pregnancy';
 
@@ -39,7 +55,7 @@ export default function CycleTracking() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Pregnancy kick counter state (for Ananya / Pregnancy stage)
-  const [kickCount, setKickCount] = useState<number>(7);
+  const [kickCount, setKickCount] = useState<number>(isDemo ? 7 : 0);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

@@ -17,6 +17,17 @@ export interface DemoAccount {
   profile: UserProfile;
 }
 
+export const isDemoUser = (email?: string): boolean => {
+  if (!email) return false;
+  const lower = email.toLowerCase().trim();
+  return (
+    lower === 'priya@example.com' ||
+    lower === 'ananya@example.com' ||
+    lower === 'dr.mehta@bombayhospital.org' ||
+    lower === 'admin@womenshealth.internal'
+  );
+};
+
 export const DEMO_ACCOUNTS: DemoAccount[] = [
   {
     id: 'demo-reproductive',
