@@ -40,3 +40,4 @@ if %errorlevel% neq 0 (
     echo [Notice] Launcher process exited.
     pause
 )
+

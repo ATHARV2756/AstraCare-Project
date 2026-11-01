@@ -21,3 +21,4 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000 ^| findstr LISTENING') 
 echo [✓] All AstraCare background services have been stopped.
 echo.
 pause
+
