@@ -150,7 +150,7 @@ export default function NutritionHydration() {
   const totalFats = meals.reduce((acc, m) => acc + m.fats, 0);
 
   // Micronutrient protocol
-  const micronutrients = [
+  const demoMicronutrients = [
     { name: 'Elemental Iron', current: '28 mg', target: '30 mg', pct: 93, status: 'Optimal', note: 'Absorbed via spinach & seeds' },
     { name: 'Bioavailable Folate (B9)', current: '420 mcg', target: '400 mcg', pct: 100, status: 'Target Met', note: 'Supports RBC & cell replication' },
     { name: 'Calcium & Vit D3', current: '920 mg', target: '1000 mg', pct: 92, status: 'Optimal', note: 'Paneer, almond milk & sunlight' },
@@ -159,11 +159,22 @@ export default function NutritionHydration() {
     { name: 'Zinc & Selenium', current: '11 mg', target: '12 mg', pct: 92, status: 'Optimal', note: 'Pumpkin seeds & whole grains' }
   ];
 
-  // Hydration pacing schedule
+  const emptyMicronutrients = [
+    { name: 'Elemental Iron', current: '0 mg', target: '30 mg', pct: 0, status: 'Pending Intake', note: 'Awaiting meal or supplement entry' },
+    { name: 'Bioavailable Folate (B9)', current: '0 mcg', target: '400 mcg', pct: 0, status: 'Pending Intake', note: 'Awaiting meal or supplement entry' },
+    { name: 'Calcium & Vit D3', current: '0 mg', target: '1000 mg', pct: 0, status: 'Pending Intake', note: 'Awaiting meal or supplement entry' },
+    { name: 'Magnesium Glycinate', current: '0 mg', target: '320 mg', pct: 0, status: 'Pending Intake', note: 'Awaiting meal or supplement entry' },
+    { name: 'DHA Omega-3', current: '0 mg', target: '250 mg', pct: 0, status: 'Pending Intake', note: 'Awaiting meal or supplement entry' },
+    { name: 'Zinc & Selenium', current: '0 mg', target: '12 mg', pct: 0, status: 'Pending Intake', note: 'Awaiting meal or supplement entry' }
+  ];
+
+  const micronutrients = isDemo ? demoMicronutrients : (meals.length > 0 ? demoMicronutrients : emptyMicronutrients);
+
+  // Hydration pacing schedule (dynamically evaluated based on actual hydration)
   const hydrationSchedule = [
-    { time: '08:00 AM', label: 'Morning Jumpstart', amount: '500 ml', done: true },
-    { time: '11:30 AM', label: 'Mid-Morning Hydration', amount: '500 ml', done: true },
-    { time: '02:00 PM', label: 'Post-Lunch Fluid Balance', amount: '500 ml', done: true },
+    { time: '08:00 AM', label: 'Morning Jumpstart', amount: '500 ml', done: hydration >= 500 },
+    { time: '11:30 AM', label: 'Mid-Morning Hydration', amount: '500 ml', done: hydration >= 1000 },
+    { time: '02:00 PM', label: 'Post-Lunch Fluid Balance', amount: '500 ml', done: hydration >= 1500 },
     { time: '05:00 PM', label: 'Late Afternoon Refresh', amount: '500 ml', done: hydration >= 2000 },
     { time: '08:30 PM', label: 'Evening Gentle Hydration', amount: '500 ml', done: hydration >= 2500 }
   ];
@@ -368,7 +379,7 @@ export default function NutritionHydration() {
                 <span>Optimal Hydration Pacing Timeline</span>
               </h3>
               <span className="text-xs text-[#2BA6A0] font-bold bg-[#E3F5F4] px-3 py-1 rounded-full">
-                {hydration >= 1750 ? '3/5 Milestones' : '2/5 Milestones'}
+                {hydrationSchedule.filter(hs => hs.done).length}/5 Milestones
               </span>
             </div>
 

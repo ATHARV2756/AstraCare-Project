@@ -46,6 +46,16 @@ export default function CycleTracking() {
   const cycleLength = user?.menstrualHistory?.cycleLength || 28;
   const isPregnancy = user?.lifeStage === 'pregnancy';
 
+  // Read scoped user hydration
+  const hydrationStorageKey = `astracare_hydration_${user?.email || 'guest'}`;
+  const [hydrationVal, setHydrationVal] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(hydrationStorageKey);
+      if (stored !== null) return Number(stored);
+    } catch {}
+    return isDemo ? 2250 : 0;
+  });
+
   // Period log modal state
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [periodStartDate, setPeriodStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -150,10 +160,18 @@ export default function CycleTracking() {
               Current Cycle Day
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl sm:text-4xl font-serif font-black text-[#3B2A33]">Day {currentDay}</span>
+              <span className="text-3xl sm:text-4xl font-serif font-black text-[#3B2A33]">
+                {isDemo || user?.menstrualHistory?.lastPeriodDate ? `Day ${currentDay}` : 'Day --'}
+              </span>
             </div>
-            <span className="text-xs font-bold text-[#C2456B] block">Phase 2 • Follicular Phase</span>
-            <span className="text-xs text-[#8A7580] block pt-0.5">Estrogen Rise • High Energy State</span>
+            <span className="text-xs font-bold text-[#C2456B] block">
+              {isDemo || user?.menstrualHistory?.lastPeriodDate 
+                ? (currentDay <= 5 ? 'Phase 1 • Menstrual' : currentDay <= 13 ? 'Phase 2 • Follicular' : currentDay <= 16 ? 'Phase 3 • Ovulatory' : 'Phase 4 • Luteal') 
+                : 'Awaiting Period Log'}
+            </span>
+            <span className="text-xs text-[#8A7580] block pt-0.5">
+              {isDemo || user?.menstrualHistory?.lastPeriodDate ? 'Rhythm calibration active' : 'Tap Log Period Start to begin'}
+            </span>
           </div>
 
           {/* Stat 2: Estimated Ovulation */}
@@ -162,10 +180,20 @@ export default function CycleTracking() {
               Estimated Ovulation
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl sm:text-4xl font-serif font-black text-[#C2456B]">In 3 Days</span>
+              <span className="text-3xl sm:text-4xl font-serif font-black text-[#C2456B]">
+                {isDemo 
+                  ? 'In 3 Days' 
+                  : (user?.menstrualHistory?.lastPeriodDate 
+                      ? (currentDay < cycleLength - 14 ? `In ${cycleLength - 14 - currentDay} Days` : 'Ovulatory Phase Active') 
+                      : 'Pending Log')}
+              </span>
             </div>
-            <span className="text-xs font-bold text-[#9B5B7A] block">Fertile Window Approaching</span>
-            <span className="text-xs text-[#8A7580] block pt-0.5">Fertile Window: Days 13–16</span>
+            <span className="text-xs font-bold text-[#9B5B7A] block">
+              {isDemo || user?.menstrualHistory?.lastPeriodDate ? 'Fertile Window Model Active' : 'Period date needed'}
+            </span>
+            <span className="text-xs text-[#8A7580] block pt-0.5">
+              Est. Window: Days {cycleLength - 16}–{cycleLength - 12}
+            </span>
           </div>
 
           {/* Stat 3: Next Period Prediction */}
@@ -174,10 +202,18 @@ export default function CycleTracking() {
               Next Period Prediction
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl sm:text-4xl font-serif font-black text-[#3B2A33]">17 Days</span>
+              <span className="text-3xl sm:text-4xl font-serif font-black text-[#3B2A33]">
+                {isDemo 
+                  ? '17 Days' 
+                  : (user?.menstrualHistory?.lastPeriodDate ? `${Math.max(1, cycleLength - currentDay)} Days` : 'Awaiting Log')}
+              </span>
             </div>
-            <span className="text-xs font-bold text-[#8A7580] block">Est. Length: 28.0 days</span>
-            <span className="text-xs text-[#2E9E6B] font-semibold block pt-0.5">Estimated: Nov 15, 2026</span>
+            <span className="text-xs font-bold text-[#8A7580] block">
+              Est. Length: {cycleLength}.0 days
+            </span>
+            <span className="text-xs text-[#2E9E6B] font-semibold block pt-0.5">
+              {isDemo ? 'Estimated: Nov 15, 2026' : (user?.menstrualHistory?.lastPeriodDate ? 'Calendar sync ready' : 'Log period to forecast')}
+            </span>
           </div>
 
           {/* Stat 4: Cycle Regularity */}
@@ -186,10 +222,16 @@ export default function CycleTracking() {
               Cycle Regularity
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl sm:text-4xl font-serif font-black text-[#2E9E6B]">Regular</span>
+              <span className="text-3xl sm:text-4xl font-serif font-black text-[#2E9E6B]">
+                {isDemo ? 'Regular' : 'Calibrating'}
+              </span>
             </div>
-            <span className="text-xs font-bold text-[#2E9E6B] block">High AI Confidence</span>
-            <span className="text-xs text-[#8A7580] block pt-0.5">Variance: ±1.2 Days</span>
+            <span className="text-xs font-bold text-[#2E9E6B] block">
+              {isDemo ? 'High AI Confidence' : 'New User Baseline'}
+            </span>
+            <span className="text-xs text-[#8A7580] block pt-0.5">
+              {isDemo ? 'Variance: ±1.2 Days' : 'Record 2+ cycles for variance'}
+            </span>
           </div>
         </div>
       ) : (
@@ -199,27 +241,45 @@ export default function CycleTracking() {
             <span className="text-xs font-bold text-[#8A7580] uppercase tracking-wider block">
               Gestational Age
             </span>
-            <span className="text-3xl sm:text-4xl font-serif font-black text-[#3B2A33] block">Week 24</span>
-            <span className="text-xs font-bold text-[#E0A030] block">Trimester 2 (60% completed)</span>
-            <span className="text-xs text-[#8A7580] block pt-0.5">112 Days until expected due date</span>
+            <span className="text-3xl sm:text-4xl font-serif font-black text-[#3B2A33] block">
+              {isDemo ? 'Week 24' : (user?.menstrualHistory?.dueDate ? 'Trimester Active' : 'Due Date Pending')}
+            </span>
+            <span className="text-xs font-bold text-[#E0A030] block">
+              {isDemo ? 'Trimester 2 (60% completed)' : 'Maternal Journey Active'}
+            </span>
+            <span className="text-xs text-[#8A7580] block pt-0.5">
+              {isDemo ? '112 Days until expected due date' : 'Fetal tracking enabled'}
+            </span>
           </div>
 
           <div className="p-6 sm:p-7 rounded-3xl bg-white border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-2 hover:border-[#E8758F] transition-all">
             <span className="text-xs font-bold text-[#8A7580] uppercase tracking-wider block">
               Expected Due Date
             </span>
-            <span className="text-3xl sm:text-4xl font-serif font-black text-[#3B2A33] block">Feb 14, 2027</span>
-            <span className="text-xs font-bold text-[#2E9E6B] block">Valentine Due Date</span>
-            <span className="text-xs text-[#8A7580] block pt-0.5">Attending OB/GYN: Dr. Sunita Rao</span>
+            <span className="text-3xl sm:text-4xl font-serif font-black text-[#3B2A33] block">
+              {isDemo ? 'Feb 14, 2027' : (user?.menstrualHistory?.dueDate || 'Not set in profile')}
+            </span>
+            <span className="text-xs font-bold text-[#2E9E6B] block">
+              {isDemo ? 'Valentine Due Date' : (user?.menstrualHistory?.dueDate ? 'Clinical Date Set' : 'Update in Edit Profile')}
+            </span>
+            <span className="text-xs text-[#8A7580] block pt-0.5">
+              {isDemo ? 'Attending OB/GYN: Dr. Sunita Rao' : 'Attending Clinician: Pending'}
+            </span>
           </div>
 
           <div className="p-6 sm:p-7 rounded-3xl bg-white border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-2 hover:border-[#E8758F] transition-all">
             <span className="text-xs font-bold text-[#8A7580] uppercase tracking-wider block">
               Fetal Size & Weight
             </span>
-            <span className="text-2xl sm:text-3xl font-serif font-black text-[#3B2A33] block">~30 cm • 600g</span>
-            <span className="text-xs font-bold text-[#9B5B7A] block">Ear of Corn Size</span>
-            <span className="text-xs text-[#8A7580] block pt-0.5">Auditory sensory & lung practice</span>
+            <span className="text-2xl sm:text-3xl font-serif font-black text-[#3B2A33] block">
+              {isDemo ? '~30 cm • 600g' : 'Fetal Growth Curve'}
+            </span>
+            <span className="text-xs font-bold text-[#9B5B7A] block">
+              {isDemo ? 'Ear of Corn Size' : 'Weekly Milestones'}
+            </span>
+            <span className="text-xs text-[#8A7580] block pt-0.5">
+              {isDemo ? 'Auditory sensory & lung practice' : 'Sensory & structural growth'}
+            </span>
           </div>
 
           <div className="p-6 sm:p-7 rounded-3xl bg-white border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-2 hover:border-[#E8758F] transition-all">
@@ -561,8 +621,10 @@ export default function CycleTracking() {
                 </div>
                 <div className="p-3.5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] space-y-1">
                   <span className="text-[#8A7580] text-[11px] font-medium">Daily Hydration Balance</span>
-                  <div className="text-2xl font-serif font-black text-[#3B2A33]">2.25 <span className="text-xs font-normal text-[#8A7580]">/ 2.50 L</span></div>
-                  <span className="text-[10px] font-bold text-[#2BA6A0]">✓ 90% reached</span>
+                  <div className="text-2xl font-serif font-black text-[#3B2A33]">
+                    {(hydrationVal / 1000).toFixed(2)} <span className="text-xs font-normal text-[#8A7580]">/ 2.50 L</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-[#2BA6A0]">✓ {Math.round((hydrationVal / 2500) * 100)}% reached</span>
                 </div>
               </div>
             </div>
@@ -576,17 +638,21 @@ export default function CycleTracking() {
                     <span>Clinical Care & Prenatal Visits</span>
                   </h3>
                   <span className="text-xs font-bold text-[#C2456B] bg-[#FCE4EC] px-2.5 py-0.5 rounded-full">
-                    Confirmed
+                    {isDemo ? 'Confirmed' : 'Pending Scheduling'}
                   </span>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] space-y-2 mb-3">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-[#3B2A33]">Next Prenatal Consultation</span>
-                    <span className="text-[#C2456B] font-bold">Thu, Nov 12, 2026 • 10:30 AM</span>
+                    <span className="text-[#C2456B] font-bold">
+                      {isDemo ? 'Thu, Nov 12, 2026 • 10:30 AM' : 'No upcoming visits'}
+                    </span>
                   </div>
                   <p className="text-xs text-[#8A7580]">
-                    Dr. Sunita Rao, MD (OB/GYN) • Routine Fundal Height & Glucose Tolerance Screening (OGTT).
+                    {isDemo 
+                      ? 'Dr. Sunita Rao, MD (OB/GYN) • Routine Fundal Height & Glucose Tolerance Screening (OGTT).' 
+                      : 'Consultations booked with your verified OB/GYN will appear here.'}
                   </p>
                 </div>
 

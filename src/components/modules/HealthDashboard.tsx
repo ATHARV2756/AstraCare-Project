@@ -41,6 +41,25 @@ export default function HealthDashboard() {
     return isDemo ? 1750 : 0;
   });
 
+  // Scoped steps state (persisted per-user)
+  const stepsStorageKey = `astracare_steps_${user?.email || 'guest'}`;
+  const [steps, setSteps] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(stepsStorageKey);
+      if (stored !== null) return Number(stored);
+    } catch {}
+    return isDemo ? 8420 : 0;
+  });
+
+  const checkInStorageKey = `astracare_checkin_${user?.email || 'guest'}`;
+  const [hasCheckedIn, setHasCheckedIn] = useState<boolean>(() => {
+    if (isDemo) return true;
+    try {
+      return localStorage.getItem(checkInStorageKey) === 'true';
+    } catch {}
+    return false;
+  });
+
   const hydrationGoal = 2500;
   const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [checkInModalOpen, setCheckInModalOpen] = useState(false);
@@ -51,7 +70,14 @@ export default function HealthDashboard() {
   const [checkInEnergy, setCheckInEnergy] = useState(4);
   const [checkInStress, setCheckInStress] = useState(3);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
-  const [healthScore, setHealthScore] = useState<number>(isDemo ? 88 : 75);
+  const [healthScore, setHealthScore] = useState<number>(() => {
+    if (isDemo) return 88;
+    try {
+      const stored = localStorage.getItem(`astracare_healthscore_${user?.email || 'guest'}`);
+      if (stored !== null) return Number(stored);
+    } catch {}
+    return 75;
+  });
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -78,9 +104,14 @@ export default function HealthDashboard() {
   const handleSaveCheckIn = (e: React.FormEvent) => {
     e.preventDefault();
     setCheckInModalOpen(false);
+    setHasCheckedIn(true);
     // Recalculate dynamic health score
     const newScore = Math.min(100, Math.max(50, 75 + checkInEnergy * 4 - checkInStress * 2 + (hydration >= hydrationGoal ? 5 : 0)));
     setHealthScore(newScore);
+    try {
+      localStorage.setItem(checkInStorageKey, 'true');
+      localStorage.setItem(`astracare_healthscore_${user?.email || 'guest'}`, newScore.toString());
+    } catch {}
     showToast(`Daily check-in recorded! Health Score calibrated to ${newScore}/100.`);
   };
 
@@ -249,26 +280,38 @@ export default function HealthDashboard() {
               <span className="font-bold text-[#8A7580] uppercase tracking-wider text-xs">
                 {activeTab === 'daily' ? 'Health Score' : activeTab === 'weekly' ? '7-Day Avg Score' : '30-Day Mean Vitality'}
               </span>
-              <span className="text-[#2E9E6B] bg-[#E4F5EC] px-2.5 py-0.5 rounded-full font-bold text-xs flex items-center gap-1 border border-[#2E9E6B]/20">
+              <span className={`px-2.5 py-0.5 rounded-full font-bold text-xs flex items-center gap-1 border ${
+                (hasCheckedIn || isDemo) ? 'text-[#2E9E6B] bg-[#E4F5EC] border-[#2E9E6B]/20' : 'text-[#8A7580] bg-[#FFF8F9] border-[#F6E3E8]'
+              }`}>
                 <TrendingUp size={12} />
-                {activeTab === 'daily' ? '+4.2% Today' : activeTab === 'weekly' ? '+2.8% vs Last Wk' : '+6.5% vs Sept'}
+                {(hasCheckedIn || isDemo)
+                  ? (activeTab === 'daily' ? '+4.2% Today' : activeTab === 'weekly' ? '+2.8% vs Last Wk' : '+6.5% vs Sept')
+                  : 'Awaiting Check-in'}
               </span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-serif font-black text-[#3B2A33]">
-                {activeTab === 'daily' ? healthScore : activeTab === 'weekly' ? 86 : 84}
+                {(hasCheckedIn || isDemo)
+                  ? (activeTab === 'daily' ? healthScore : activeTab === 'weekly' ? (isDemo ? 86 : healthScore) : (isDemo ? 84 : healthScore))
+                  : '--'}
               </span>
               <span className="text-sm font-bold text-[#8A7580]">/ 100</span>
             </div>
             <p className="text-xs text-[#8A7580] leading-relaxed">
-              {activeTab === 'daily' && "Optimal biological balance calculated from sleep telemetry, HRV autonomic response, and hydration index."}
-              {activeTab === 'weekly' && "7-day rolling average across 7 sleep cycles, 68,450 cumulative steps, and steady parasympathetic recovery."}
-              {activeTab === 'monthly' && "30-day longitudinal vitality trajectory across follicular & luteal phases with zero acute allostatic stress."}
+              {(hasCheckedIn || isDemo) ? (
+                activeTab === 'daily' 
+                  ? "Optimal biological balance calculated from sleep telemetry, HRV autonomic response, and hydration index."
+                  : activeTab === 'weekly' 
+                  ? (isDemo ? "7-day rolling average across 7 sleep cycles, 68,450 cumulative steps, and steady parasympathetic recovery." : "Weekly baseline calibrated from your recorded daily health check-ins.")
+                  : (isDemo ? "30-day longitudinal vitality trajectory across follicular & luteal phases with zero acute allostatic stress." : "Monthly vitality trajectory building from your physiological inputs.")
+              ) : (
+                "Tap 'Daily Check-in' above to calibrate your personal biological vitality score."
+              )}
             </p>
             <div className="w-full bg-[#F6E3E8] rounded-full h-2 overflow-hidden">
               <div 
                 className="bg-gradient-to-r from-[#E8758F] to-[#2E9E6B] h-2 rounded-full transition-all duration-500" 
-                style={{ width: `${activeTab === 'daily' ? healthScore : activeTab === 'weekly' ? 86 : 84}%` }} 
+                style={{ width: `${(hasCheckedIn || isDemo) ? (activeTab === 'daily' ? healthScore : activeTab === 'weekly' ? (isDemo ? 86 : healthScore) : (isDemo ? 84 : healthScore)) : 0}%` }} 
               />
             </div>
           </div>
@@ -331,20 +374,20 @@ export default function HealthDashboard() {
             </div>
             <div className="space-y-1">
               <span className="text-xl font-serif font-bold text-[#3B2A33] block">
-                {activeTab === 'daily' && 'Light Walking & Mobility'}
-                {activeTab === 'weekly' && '68,450 Total Steps'}
-                {activeTab === 'monthly' && '284,500 Steps'}
+                {activeTab === 'daily' && (steps > 0 ? `${steps.toLocaleString()} Steps` : 'Light Walking & Mobility')}
+                {activeTab === 'weekly' && (isDemo ? '68,450 Total Steps' : `${steps.toLocaleString()} Steps`)}
+                {activeTab === 'monthly' && (isDemo ? '284,500 Steps' : `${steps.toLocaleString()} Steps`)}
               </span>
               <span className="text-xs text-[#8A7580] font-medium block">
-                {activeTab === 'daily' && '25 mins • 180 kcal burn target'}
-                {activeTab === 'weekly' && 'Avg 9,778 steps/day • 2,480 kcal burn'}
-                {activeTab === 'monthly' && '28 Active Sessions • 11,200 kcal burn'}
+                {activeTab === 'daily' && (steps > 0 ? `${steps} / 10,000 steps target` : '25 mins • 180 kcal burn target')}
+                {activeTab === 'weekly' && (isDemo ? 'Avg 9,778 steps/day • 2,480 kcal burn' : `${steps} steps logged this week`)}
+                {activeTab === 'monthly' && (isDemo ? '28 Active Sessions • 11,200 kcal burn' : `${steps} cumulative steps recorded`)}
               </span>
             </div>
             <p className="text-xs text-[#8A7580] leading-relaxed">
-              {activeTab === 'daily' && 'Low-impact movement to prevent energy slump and optimize insulin sensitivity during active hormonal phase.'}
-              {activeTab === 'weekly' && 'Daily step goal met 6 out of 7 days. Balanced aerobic endurance conditioning without cortisol spikes.'}
-              {activeTab === 'monthly' && 'Steady metabolic conditioning across 4 weeks with scheduled active recovery deloads during luteal days.'}
+              {activeTab === 'daily' && (steps > 0 ? 'Active movement logged today contributing to metabolic conditioning.' : 'Low-impact movement to prevent energy slump and optimize insulin sensitivity during active hormonal phase.')}
+              {activeTab === 'weekly' && (isDemo ? 'Daily step goal met 6 out of 7 days. Balanced aerobic endurance conditioning without cortisol spikes.' : 'Weekly cumulative activity recorded from your AstraBand and manual logs.')}
+              {activeTab === 'monthly' && (isDemo ? 'Steady metabolic conditioning across 4 weeks with scheduled active recovery deloads during luteal days.' : 'Monthly physical training trends and step counts.')}
             </p>
             <button
               onClick={() => setCurrentRoute('/fitness')}
@@ -363,21 +406,21 @@ export default function HealthDashboard() {
               </span>
               <span className="text-[#1F807B] bg-[#E3F5F4] px-2.5 py-0.5 rounded-full font-bold text-xs">
                 {activeTab === 'daily' && `${Math.round((hydration / hydrationGoal) * 100)}% Reached`}
-                {activeTab === 'weekly' && '94% Weekly Target'}
-                {activeTab === 'monthly' && '95% Compliance'}
+                {activeTab === 'weekly' && (isDemo ? '94% Weekly Target' : `${Math.round((hydration / (hydrationGoal * 7)) * 100)}% Reached`)}
+                {activeTab === 'monthly' && (isDemo ? '95% Compliance' : `${Math.round((hydration / (hydrationGoal * 30)) * 100)}% Reached`)}
               </span>
             </div>
 
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-serif font-black text-[#3B2A33]">
                 {activeTab === 'daily' && (hydration / 1000).toFixed(2)}
-                {activeTab === 'weekly' && '2.35'}
-                {activeTab === 'monthly' && '71.2'}
+                {activeTab === 'weekly' && (isDemo ? '2.35' : (hydration / 1000).toFixed(2))}
+                {activeTab === 'monthly' && (isDemo ? '71.2' : (hydration / 1000).toFixed(2))}
               </span>
               <span className="text-xs font-bold text-[#8A7580]">
                 {activeTab === 'daily' && `/ ${(hydrationGoal / 1000).toFixed(2)} L`}
-                {activeTab === 'weekly' && 'L / Day Avg (16.45L Tot)'}
-                {activeTab === 'monthly' && 'Liters Total (2.37L/d)'}
+                {activeTab === 'weekly' && (isDemo ? 'L / Day Avg (16.45L Tot)' : 'L logged this week')}
+                {activeTab === 'monthly' && (isDemo ? 'Liters Total (2.37L/d)' : 'L logged this month')}
               </span>
             </div>
 
@@ -385,7 +428,7 @@ export default function HealthDashboard() {
               <div 
                 className="bg-[#2BA6A0] h-2.5 rounded-full transition-all duration-300"
                 style={{ 
-                  width: `${activeTab === 'daily' ? Math.min(100, (hydration / hydrationGoal) * 100) : activeTab === 'weekly' ? 94 : 95}%` 
+                  width: `${activeTab === 'daily' ? Math.min(100, (hydration / hydrationGoal) * 100) : isDemo ? (activeTab === 'weekly' ? 94 : 95) : Math.min(100, (hydration / hydrationGoal) * 100)}%` 
                 }}
               />
             </div>
@@ -426,75 +469,109 @@ export default function HealthDashboard() {
 
         {/* SPECIALIZED AGGREGATE HIGHLIGHTS BAR FOR WEEKLY & MONTHLY */}
         {activeTab === 'weekly' && (
-          <div className="card-protocol-banner p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#FFF8F9] via-white to-[#FCE4EC]/50 border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#C2456B] uppercase tracking-wider flex items-center gap-2">
-                <Sparkles size={15} />
-                <span>7-Day Longitudinal Telemetry Highlights</span>
-              </span>
-              <span className="text-xs font-bold text-[#2E9E6B] bg-[#E4F5EC] px-3 py-0.5 rounded-full border border-[#2E9E6B]/20">
-                100% Adherence Streak
-              </span>
+          isDemo ? (
+            <div className="card-protocol-banner p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#FFF8F9] via-white to-[#FCE4EC]/50 border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#C2456B] uppercase tracking-wider flex items-center gap-2">
+                  <Sparkles size={15} />
+                  <span>7-Day Longitudinal Telemetry Highlights</span>
+                </span>
+                <span className="text-xs font-bold text-[#2E9E6B] bg-[#E4F5EC] px-3 py-0.5 rounded-full border border-[#2E9E6B]/20">
+                  100% Adherence Streak
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+                <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
+                  <span className="text-[11px] text-[#8A7580] block">Mean Sleep Duration</span>
+                  <span className="text-base font-serif font-black text-purple-700 block">7h 42m / night</span>
+                  <span className="text-[10px] text-[#2E9E6B] font-bold">87% restorative sleep</span>
+                </div>
+                <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
+                  <span className="text-[11px] text-[#8A7580] block">Resting Heart Rate</span>
+                  <span className="text-base font-serif font-black text-[#3B2A33] block">63 bpm mean</span>
+                  <span className="text-[10px] text-[#8A7580]">Range: 59 – 68 bpm</span>
+                </div>
+                <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
+                  <span className="text-[11px] text-[#8A7580] block">Mean Nocturnal HRV</span>
+                  <span className="text-base font-serif font-black text-[#3B2A33] block">56 ms RMSSD</span>
+                  <span className="text-[10px] text-[#2E9E6B] font-bold">High parasympathetic tone</span>
+                </div>
+                <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
+                  <span className="text-[11px] text-[#8A7580] block">Medication Compliance</span>
+                  <span className="text-base font-serif font-black text-[#2E9E6B] block">28 of 28 Doses</span>
+                  <span className="text-[10px] text-[#2E9E6B] font-bold">Iron & Vit D taken on time</span>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
-              <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
-                <span className="text-[11px] text-[#8A7580] block">Mean Sleep Duration</span>
-                <span className="text-base font-serif font-black text-purple-700 block">7h 42m / night</span>
-                <span className="text-[10px] text-[#2E9E6B] font-bold">87% restorative sleep</span>
+          ) : (
+            <div className="card-protocol-banner p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#FFF8F9] via-white to-[#FCE4EC]/50 border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#C2456B] uppercase tracking-wider flex items-center gap-2">
+                  <Sparkles size={15} />
+                  <span>7-Day Longitudinal Telemetry Baseline</span>
+                </span>
+                <span className="text-xs font-bold text-[#8A7580] bg-[#FFF8F9] px-3 py-0.5 rounded-full border border-[#F6E3E8]">
+                  Baseline Initializing
+                </span>
               </div>
-              <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
-                <span className="text-[11px] text-[#8A7580] block">Resting Heart Rate</span>
-                <span className="text-base font-serif font-black text-[#3B2A33] block">63 bpm mean</span>
-                <span className="text-[10px] text-[#8A7580]">Range: 59 – 68 bpm</span>
-              </div>
-              <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
-                <span className="text-[11px] text-[#8A7580] block">Mean Nocturnal HRV</span>
-                <span className="text-base font-serif font-black text-[#3B2A33] block">56 ms RMSSD</span>
-                <span className="text-[10px] text-[#2E9E6B] font-bold">High parasympathetic tone</span>
-              </div>
-              <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
-                <span className="text-[11px] text-[#8A7580] block">Medication Compliance</span>
-                <span className="text-base font-serif font-black text-[#2E9E6B] block">28 of 28 Doses</span>
-                <span className="text-[10px] text-[#2E9E6B] font-bold">Iron & Vit D taken on time</span>
-              </div>
+              <p className="text-xs text-[#8A7580] leading-relaxed">
+                Welcome to your private health portal! As you log daily water intake, workouts, and sleep, your 7-day rolling telemetry averages and adherence consistency will automatically calibrate here.
+              </p>
             </div>
-          </div>
+          )
         )}
 
         {activeTab === 'monthly' && (
-          <div className="card-protocol-banner p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#FFF8F9] via-white to-[#FCE4EC]/50 border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#C2456B] uppercase tracking-wider flex items-center gap-2">
-                <Sparkles size={15} />
-                <span>30-Day Clinical Physiological Trajectory</span>
-              </span>
-              <span className="text-xs font-bold text-[#2E9E6B] bg-[#E4F5EC] px-3 py-0.5 rounded-full border border-[#2E9E6B]/20">
-                Consultation Ready
-              </span>
+          isDemo ? (
+            <div className="card-protocol-banner p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#FFF8F9] via-white to-[#FCE4EC]/50 border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#C2456B] uppercase tracking-wider flex items-center gap-2">
+                  <Sparkles size={15} />
+                  <span>30-Day Clinical Physiological Trajectory</span>
+                </span>
+                <span className="text-xs font-bold text-[#2E9E6B] bg-[#E4F5EC] px-3 py-0.5 rounded-full border border-[#2E9E6B]/20">
+                  Consultation Ready
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+                <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
+                  <span className="text-[11px] text-[#8A7580] block">Monthly Sleep Regularity</span>
+                  <span className="text-base font-serif font-black text-purple-700 block">7h 35m avg</span>
+                  <span className="text-[10px] text-[#8A7580]">30 nights recorded</span>
+                </div>
+                <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
+                  <span className="text-[11px] text-[#8A7580] block">Cardiovascular Stability</span>
+                  <span className="text-base font-serif font-black text-[#3B2A33] block">64 bpm baseline</span>
+                  <span className="text-[10px] text-[#2E9E6B] font-bold">Stable stroke volume</span>
+                </div>
+                <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
+                  <span className="text-[11px] text-[#8A7580] block">Blood Oxygen Saturation</span>
+                  <span className="text-base font-serif font-black text-[#3B2A33] block">98% SpO₂ mean</span>
+                  <span className="text-[10px] text-[#2E9E6B] font-bold">0 nocturnal desaturations</span>
+                </div>
+                <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
+                  <span className="text-[11px] text-[#8A7580] block">Longitudinal Dossier</span>
+                  <span className="text-base font-serif font-black text-[#C2456B] block">Compiled & Ready</span>
+                  <span className="text-[10px] text-[#8A7580]">Export PDF in Health Reports</span>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
-              <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
-                <span className="text-[11px] text-[#8A7580] block">Monthly Sleep Regularity</span>
-                <span className="text-base font-serif font-black text-purple-700 block">7h 35m avg</span>
-                <span className="text-[10px] text-[#8A7580]">30 nights recorded</span>
+          ) : (
+            <div className="card-protocol-banner p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#FFF8F9] via-white to-[#FCE4EC]/50 border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#C2456B] uppercase tracking-wider flex items-center gap-2">
+                  <Sparkles size={15} />
+                  <span>30-Day Physiological Trajectory</span>
+                </span>
+                <span className="text-xs font-bold text-[#8A7580] bg-[#FFF8F9] px-3 py-0.5 rounded-full border border-[#F6E3E8]">
+                  Longitudinal Calibration
+                </span>
               </div>
-              <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
-                <span className="text-[11px] text-[#8A7580] block">Cardiovascular Stability</span>
-                <span className="text-base font-serif font-black text-[#3B2A33] block">64 bpm baseline</span>
-                <span className="text-[10px] text-[#2E9E6B] font-bold">Stable stroke volume</span>
-              </div>
-              <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
-                <span className="text-[11px] text-[#8A7580] block">Blood Oxygen Saturation</span>
-                <span className="text-base font-serif font-black text-[#3B2A33] block">98% SpO₂ mean</span>
-                <span className="text-[10px] text-[#2E9E6B] font-bold">0 nocturnal desaturations</span>
-              </div>
-              <div className="p-3 bg-white rounded-2xl border border-[#F6E3E8]">
-                <span className="text-[11px] text-[#8A7580] block">Longitudinal Dossier</span>
-                <span className="text-base font-serif font-black text-[#C2456B] block">Compiled & Ready</span>
-                <span className="text-[10px] text-[#8A7580]">Export PDF in Health Reports</span>
-              </div>
+              <p className="text-xs text-[#8A7580] leading-relaxed">
+                Your monthly biological rhythms and hormonal transitions will emerge over your first complete tracking cycle and consultation history.
+              </p>
             </div>
-          </div>
+          )
         )}
       </div>
 
@@ -508,7 +585,7 @@ export default function HealthDashboard() {
             </span>
           </h2>
           <span className="text-xs text-[#8A7580]">
-            {activeTab === 'daily' ? 'Live Telemetry Active' : activeTab === 'weekly' ? '7-Day Rolling Window' : 'Monthly Baseline'}
+            {isDemo ? (activeTab === 'daily' ? 'Live Telemetry Active' : activeTab === 'weekly' ? '7-Day Rolling Window' : 'Monthly Baseline') : 'Sensor Calibration'}
           </span>
         </div>
 
@@ -522,12 +599,14 @@ export default function HealthDashboard() {
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-2xl font-serif font-black text-[#3B2A33]">
-                {activeTab === 'daily' ? '64' : activeTab === 'weekly' ? '63' : '64'}
+                {isDemo ? (activeTab === 'daily' ? '64' : activeTab === 'weekly' ? '63' : '64') : '--'}
               </span>
               <span className="text-xs font-semibold text-[#8A7580]">bpm</span>
             </div>
             <span className="text-[10px] font-bold text-[#2E9E6B] block">
-              {activeTab === 'daily' ? '✓ Normal baseline' : activeTab === 'weekly' ? 'Range: 59–68 bpm' : '✓ Hemodynamic stability'}
+              {isDemo 
+                ? (activeTab === 'daily' ? '✓ Normal baseline' : activeTab === 'weekly' ? 'Range: 59–68 bpm' : '✓ Hemodynamic stability')
+                : 'Awaiting sensor sync'}
             </span>
           </div>
 
@@ -539,12 +618,14 @@ export default function HealthDashboard() {
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-2xl font-serif font-black text-[#3B2A33]">
-                {activeTab === 'daily' ? '58' : activeTab === 'weekly' ? '56' : '55'}
+                {isDemo ? (activeTab === 'daily' ? '58' : activeTab === 'weekly' ? '56' : '55') : '--'}
               </span>
               <span className="text-xs font-semibold text-[#8A7580]">ms</span>
             </div>
             <span className="text-[10px] font-bold text-[#2E9E6B] block">
-              {activeTab === 'daily' ? '✓ High resilience' : activeTab === 'weekly' ? 'High parasympathetic' : 'Robust vagal tone'}
+              {isDemo 
+                ? (activeTab === 'daily' ? '✓ High resilience' : activeTab === 'weekly' ? 'High parasympathetic' : 'Robust vagal tone')
+                : 'Autonomic baseline pending'}
             </span>
           </div>
 
@@ -556,11 +637,13 @@ export default function HealthDashboard() {
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-2xl font-serif font-black text-[#3B2A33]">
-                {activeTab === 'daily' ? '98' : activeTab === 'weekly' ? '98.2' : '98'}
+                {isDemo ? (activeTab === 'daily' ? '98' : activeTab === 'weekly' ? '98.2' : '98') : '--'}
               </span>
               <span className="text-xs font-semibold text-[#8A7580]">%</span>
             </div>
-            <span className="text-[10px] font-bold text-[#2E9E6B] block">✓ Optimal saturation</span>
+            <span className="text-[10px] font-bold text-[#2E9E6B] block">
+              {isDemo ? '✓ Optimal saturation' : 'Optical PPG pending'}
+            </span>
           </div>
 
           {/* Metric 4: Skin Temperature */}
@@ -571,12 +654,14 @@ export default function HealthDashboard() {
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-2xl font-serif font-black text-[#3B2A33]">
-                {activeTab === 'daily' ? '36.6' : activeTab === 'weekly' ? '36.5' : '+0.35'}
+                {isDemo ? (activeTab === 'daily' ? '36.6' : activeTab === 'weekly' ? '36.5' : '+0.35') : '--'}
               </span>
               <span className="text-xs font-semibold text-[#8A7580]">°C</span>
             </div>
             <span className="text-[10px] font-bold text-[#2E9E6B] block">
-              {activeTab === 'daily' ? '✓ Baseline follicular' : activeTab === 'weekly' ? 'Thermal shift tracked' : '✓ Ovulatory biphasic'}
+              {isDemo 
+                ? (activeTab === 'daily' ? '✓ Baseline follicular' : activeTab === 'weekly' ? 'Thermal shift tracked' : '✓ Ovulatory biphasic')
+                : 'TMP117 sync pending'}
             </span>
           </div>
 

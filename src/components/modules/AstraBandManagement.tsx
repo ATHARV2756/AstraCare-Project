@@ -23,16 +23,25 @@ import {
   Smartphone
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { isDemoUser } from '../../data/demoAccounts';
 
 export default function AstraBandManagement() {
   const { user } = useApp();
-  const [isConnected, setIsConnected] = useState(true);
+  const isDemo = isDemoUser(user?.email);
+  const stepsStorageKey = `astracare_steps_${user?.email || 'guest'}`;
+  const [isConnected, setIsConnected] = useState(isDemo);
   const [battery, setBattery] = useState(84);
   const [heartRate, setHeartRate] = useState(72);
   const [spo2, setSpo2] = useState(98);
   const [skinTemp, setSkinTemp] = useState(36.4);
   const [hrv, setHrv] = useState(54);
-  const [steps, setSteps] = useState(8420);
+  const [steps, setSteps] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(stepsStorageKey);
+      if (stored !== null) return Number(stored);
+    } catch {}
+    return isDemo ? 8420 : 0;
+  });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [otaChecking, setOtaChecking] = useState(false);

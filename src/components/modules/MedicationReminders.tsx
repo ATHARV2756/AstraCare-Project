@@ -163,16 +163,17 @@ export default function MedicationReminders() {
   };
 
   const takenCount = medications.filter((m) => m.taken).length;
-  const adherencePct = medications.length > 0 ? Math.round((takenCount / medications.length) * 100) : 100;
+  const adherencePct = medications.length > 0 ? Math.round((takenCount / medications.length) * 100) : 0;
+  const nextPendingMed = medications.find((m) => !m.taken);
 
   // 7-day adherence week
   const weeklyAdherence = [
-    { day: 'Mon', completed: true },
-    { day: 'Tue', completed: true },
-    { day: 'Wed', completed: true },
-    { day: 'Thu', completed: true },
-    { day: 'Fri', completed: true },
-    { day: 'Sat', completed: true },
+    { day: 'Mon', completed: isDemo },
+    { day: 'Tue', completed: isDemo },
+    { day: 'Wed', completed: isDemo },
+    { day: 'Thu', completed: isDemo },
+    { day: 'Fri', completed: isDemo },
+    { day: 'Sat', completed: isDemo },
     { day: 'Sun (Today)', completed: adherencePct >= 50 }
   ];
 
@@ -250,12 +251,16 @@ export default function MedicationReminders() {
             <Sparkles size={18} className="text-amber-500" />
           </div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-serif font-black text-amber-600">14 Days</span>
+            <span className="text-3xl sm:text-4xl font-serif font-black text-amber-600">
+              {isDemo ? '14 Days' : (medications.length > 0 ? (takenCount > 0 ? '1 Day' : '0 Days') : '0 Days')}
+            </span>
           </div>
           <span className="text-xs font-bold text-[#3B2A33] block">
-            100% adherence consistency
+            {isDemo ? '100% adherence consistency' : (medications.length > 0 ? 'Protocol active' : 'No active schedule')}
           </span>
-          <span className="text-[11px] text-[#2E9E6B] font-bold block pt-0.5">🔥 Top 5% maternal compliance</span>
+          <span className="text-[11px] text-[#2E9E6B] font-bold block pt-0.5">
+            {isDemo ? '🔥 Top 5% maternal compliance' : (medications.length > 0 ? 'Daily logging enabled' : 'Tap + Add to create schedule')}
+          </span>
         </div>
 
         {/* Card 3: Next Scheduled Dose */}
@@ -265,12 +270,16 @@ export default function MedicationReminders() {
             <Clock size={18} className="text-purple-600" />
           </div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-serif font-black text-purple-700">01:30 PM</span>
+            <span className="text-3xl sm:text-4xl font-serif font-black text-purple-700">
+              {isDemo ? '01:30 PM' : (nextPendingMed ? nextPendingMed.time : '--')}
+            </span>
           </div>
           <span className="text-xs font-bold text-[#3B2A33] block truncate">
-            Vitamin D3 & K2 Emulsion
+            {isDemo ? 'Vitamin D3 & K2 Emulsion' : (nextPendingMed ? nextPendingMed.name : (medications.length > 0 ? 'All doses taken today' : 'No medications scheduled'))}
           </span>
-          <span className="text-[11px] text-[#8A7580] block pt-0.5">Lunch post-meal notification active</span>
+          <span className="text-[11px] text-[#8A7580] block pt-0.5">
+            {isDemo ? 'Lunch post-meal notification active' : (nextPendingMed ? 'Notification reminder armed' : 'Schedule clear')}
+          </span>
         </div>
 
       </div>

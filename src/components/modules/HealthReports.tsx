@@ -57,7 +57,9 @@ export default function HealthReports() {
     { test: 'Serum 25-OH Vitamin D', result: '38 ng/mL', ref: '30 – 100 ng/mL', status: 'Sufficient', date: 'Oct 15, 2026' }
   ];
 
-  const biomarkers = isDemo ? demoBiomarkers : [];
+  // Scoped user report keys
+  const userReportsKey = `astracare_user_reports_${user?.email || 'guest'}`;
+  const userActiveDossierKey = `astracare_user_active_dossier_${user?.email || 'guest'}`;
 
   // Past reports archive (scoped to demo vs new users)
   const demoPastReports = [
@@ -126,7 +128,39 @@ export default function HealthReports() {
     }
   ];
 
-  const pastReports = isDemo ? demoPastReports : [];
+  const [pastReports, setPastReports] = useState<any[]>(() => {
+    try {
+      const stored = localStorage.getItem(userReportsKey);
+      if (stored !== null) return JSON.parse(stored);
+    } catch {}
+    return isDemo ? demoPastReports : [];
+  });
+
+  const [activeDossier, setActiveDossier] = useState<any | null>(() => {
+    if (isDemo) {
+      return {
+        id: 'AC-2026-9842',
+        title: 'Longitudinal Physiological & Reproductive Profile',
+        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        doctor: user?.lifeStage === 'pregnancy' ? 'Dr. Sunita Rao, MD (OB/GYN)' : 'Dr. Anjali Mehta, MD (OB/GYN)',
+        doctorReg: 'Board Certified Obstetrician & Gynecologist • Reg #MH-84210',
+        vitals: { restingHR: '64 bpm', hrv: '58 ms', spO2: '98%', sleep: '7h 35m' },
+        notes: [
+          '• Menstrual Pattern: Average cycle length established at ' + (user?.menstrualHistory?.cycleLength || 28) + ' days. Variance across last 6 cycles is ±1.2 days (High regularity confidence index).',
+          '• Hormonal Rhythm: Basal body skin temperature shift (+0.3°C) accurately aligns with estimated Day 14 ovulation window. Follicular phase progression exhibits expected estrogen surge without luteal deficiency.',
+          '• Symptom Profile: Mild pre-menstrual lower back tension and fatigue noted on Days 26–28. No alarming menorrhagia, acute dysmenorrhea, or abnormal pelvic symptoms recorded.'
+        ],
+        biomarkers: demoBiomarkers
+      };
+    }
+    try {
+      const stored = localStorage.getItem(userActiveDossierKey);
+      if (stored !== null) return JSON.parse(stored);
+    } catch {}
+    return null;
+  });
+
+  const biomarkers = activeDossier?.biomarkers || (isDemo ? demoBiomarkers : []);
 
   // Helper to generate printable hospital-grade clinical HTML dossier
   const buildDossierHTML = (
@@ -499,18 +533,26 @@ export default function HealthReports() {
   };
 
   const handlePrintReport = () => {
+    if (!activeDossier) {
+      showToast('Please generate a clinical summary first before printing.');
+      return;
+    }
     window.print();
   };
 
   // Download active clinical dossier as standalone printable HTML / PDF
   const handleDownloadActiveDossier = () => {
-    const title = 'Longitudinal Physiological & Reproductive Profile';
-    const dossierId = 'AC-2026-9842';
-    const issueDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    const doctorName = user?.lifeStage === 'pregnancy' ? 'Dr. Sunita Rao, MD (OB/GYN)' : 'Dr. Anjali Mehta, MD (OB/GYN)';
-    const doctorReg = 'Board Certified Obstetrician & Gynecologist • Reg #MH-84210';
-    const vitalsInfo = { restingHR: '64 bpm', hrv: '58 ms', spO2: '98%', sleep: '7h 35m' };
-    const clinicalNotes = [
+    if (!activeDossier) {
+      showToast('Please generate a clinical summary first before downloading.');
+      return;
+    }
+    const title = activeDossier.title || 'Longitudinal Physiological & Reproductive Profile';
+    const dossierId = activeDossier.id || 'AC-2026-9842';
+    const issueDate = activeDossier.date || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const doctorName = activeDossier.doctor || (user?.lifeStage === 'pregnancy' ? 'Dr. Sunita Rao, MD (OB/GYN)' : 'Dr. Anjali Mehta, MD (OB/GYN)');
+    const doctorReg = activeDossier.doctorReg || 'Board Certified Obstetrician & Gynecologist • Reg #MH-84210';
+    const vitalsInfo = activeDossier.vitals || { restingHR: '64 bpm', hrv: '58 ms', spO2: '98%', sleep: '7h 35m' };
+    const clinicalNotes = activeDossier.notes || [
       '• <strong>Menstrual Pattern:</strong> Average cycle length established at ' + (user?.menstrualHistory?.cycleLength || 28) + ' days. Variance across last 6 cycles is ±1.2 days (High regularity confidence index).',
       '• <strong>Hormonal Rhythm:</strong> Basal body skin temperature shift (+0.3°C) accurately aligns with estimated Day 14 ovulation window. Follicular phase progression exhibits expected estrogen surge without luteal deficiency.',
       '• <strong>Symptom Profile:</strong> Mild pre-menstrual lower back tension and fatigue noted on Days 26–28. No alarming menorrhagia, acute dysmenorrhea, or abnormal pelvic symptoms recorded.'
@@ -534,14 +576,18 @@ export default function HealthReports() {
 
   // Download active health report as structured JSON
   const handleDownloadJSON = () => {
+    if (!activeDossier) {
+      showToast('Please generate a clinical summary first before exporting JSON.');
+      return;
+    }
     const reportData = {
-      patient: user?.fullName || 'Priya Sharma',
-      dob: user?.dob || '1998-05-14',
-      bloodGroup: user?.bloodGroup || 'O+',
+      patient: user?.fullName || (isDemo ? 'Priya Sharma' : 'User'),
+      dob: user?.dob || (isDemo ? '1998-05-14' : 'Not specified'),
+      bloodGroup: user?.bloodGroup || (isDemo ? 'O+' : 'Not specified'),
       lifeStage: user?.lifeStage || 'reproductive',
       generatedDate: new Date().toISOString(),
-      reportId: 'AC-2026-9842',
-      vitals: {
+      reportId: activeDossier.id || 'AC-2026-9842',
+      vitals: activeDossier.vitals || {
         restingHeartRate: '64 bpm',
         hrvRMSSD: '58 ms',
         skinTemperature: '36.4 C',
@@ -551,7 +597,7 @@ export default function HealthReports() {
       diagnostics: {
         pcosRisk: 'Low / Controlled',
         anemiaRisk: 'Low / Re-calibrated',
-        complianceStreak: '14 Days'
+        complianceStreak: isDemo ? '14 Days' : '1 Day'
       },
       biomarkers
     };
@@ -576,7 +622,7 @@ export default function HealthReports() {
         date: pastReport.date,
         attendingPhysician: pastReport.doctor,
         registration: pastReport.doctorReg,
-        patient: user?.fullName || 'Priya Sharma',
+        patient: user?.fullName || (isDemo ? 'Priya Sharma' : 'User'),
         vitalsTelemetry: pastReport.vitals,
         clinicalAssessments: pastReport.notes,
         laboratoryBiomarkers: pastReport.biomarkers,
@@ -609,13 +655,13 @@ export default function HealthReports() {
     const fullArchive = {
       archiveMetadata: {
         system: 'AstraCare AI Longitudinal Health Repository',
-        patient: user?.fullName || 'Priya Sharma',
-        patientId: user?.id || 'usr-priya-01',
+        patient: user?.fullName || (isDemo ? 'Priya Sharma' : 'User'),
+        patientId: user?.email || 'usr-anonymous',
         exportedAt: new Date().toISOString(),
-        totalDossiers: pastReports.length + 1,
+        totalDossiers: pastReports.length + (activeDossier ? 1 : 0),
         complianceStandard: 'HIPAA & GDPR / DPDP Verified'
       },
-      currentClinicalSummary: {
+      currentClinicalSummary: activeDossier || {
         reportId: 'AC-2026-9842',
         issueDate: new Date().toISOString(),
         vitals: { restingHR: '64 bpm', hrv: '58 ms', spO2: '98%', sleep: '7h 35m' },
@@ -635,9 +681,47 @@ export default function HealthReports() {
   const handleGenerateReport = () => {
     setIsGenerating(true);
     setTimeout(() => {
+      const issueDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const dossierId = `AC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const docName = user?.lifeStage === 'pregnancy' ? 'Dr. Sunita Rao, MD (OB/GYN)' : 'Dr. Anjali Mehta, MD (OB/GYN)';
+      const docReg = 'Board Certified Obstetrician & Gynecologist • Reg #MH-84210';
+      
+      const newDossier = {
+        id: dossierId,
+        title: `${user?.fullName || 'Patient'} Physiological & Clinical Health Dossier`,
+        date: issueDate,
+        doctor: isDemo ? docName : 'Dr. Anjali Mehta, MD (Assigned Reviewer)',
+        doctorReg: docReg,
+        vitals: {
+          restingHR: isDemo ? '64 bpm' : '65 bpm (Baseline)',
+          hrv: isDemo ? '58 ms' : '55 ms (Calibrating)',
+          spO2: '98%',
+          sleep: `${user?.lifestyle?.sleepHours || 7.5}h (Baseline)`
+        },
+        notes: [
+          `• Menstrual Profile: Cycle duration baseline registered at ${user?.menstrualHistory?.cycleLength || 28} days. Predictability calibration active.`,
+          `• Physiological Baseline: Resting vitals and lifestyle baseline established with ${user?.lifestyle?.physicalActivity || 'moderate'} activity routine.`,
+          `• Clinical Guardrails: System monitoring enabled with active emergency contacts (${user?.emergencyContacts?.length || 0} registered).`
+        ],
+        biomarkers: isDemo ? demoBiomarkers : []
+      };
+
+      setActiveDossier(newDossier);
+      setPastReports(prev => {
+        const updated = [newDossier, ...prev.filter(r => r.id !== dossierId)];
+        try {
+          localStorage.setItem(userReportsKey, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+
+      try {
+        localStorage.setItem(userActiveDossierKey, JSON.stringify(newDossier));
+      } catch {}
+
       setIsGenerating(false);
       showToast('New AI Clinical Health Summary generated successfully!');
-    }, 1400);
+    }, 1200);
   };
 
   return (
@@ -743,180 +827,203 @@ export default function HealthReports() {
         </div>
       </div>
 
-      {/* CLINICAL HEALTH REPORT SHEET (PRINTABLE) */}
-      <div className="p-8 sm:p-12 rounded-3xl bg-white border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-7 print:border-none print:shadow-none print:p-0">
-        
-        {/* Report Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b-2 border-[#3B2A33] gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black tracking-widest uppercase bg-[#3B2A33] text-white px-2.5 py-0.5 rounded">
-                ASTRACARE AI
-              </span>
-              <span className="text-xs text-[#C2456B] font-bold uppercase tracking-wider">
-                CLINICAL HEALTH SUMMARY DOSSIER
-              </span>
+      {/* CLINICAL HEALTH REPORT SHEET (PRINTABLE) OR EMPTY STATE FOR NEW USERS */}
+      {activeDossier ? (
+        <div className="p-8 sm:p-12 rounded-3xl bg-white border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-7 print:border-none print:shadow-none print:p-0">
+          
+          {/* Report Top Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b-2 border-[#3B2A33] gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black tracking-widest uppercase bg-[#3B2A33] text-white px-2.5 py-0.5 rounded">
+                  ASTRACARE AI
+                </span>
+                <span className="text-xs text-[#C2456B] font-bold uppercase tracking-wider">
+                  CLINICAL HEALTH SUMMARY DOSSIER
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#3B2A33]">
+                {activeDossier.title || 'Longitudinal Physiological & Reproductive Profile'}
+              </h2>
+              <p className="text-xs text-[#8A7580] font-mono">
+                Dossier ID: {activeDossier.id || 'AC-2026-9842'} • Issued: {activeDossier.date || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#3B2A33]">
-              Longitudinal Physiological & Reproductive Profile
-            </h2>
-            <p className="text-xs text-[#8A7580] font-mono">
-              Dossier ID: AC-2026-9842 • Issued: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
-          </div>
 
-          <div className="text-right text-xs space-y-0.5 font-mono">
-            <span className="font-bold text-[#3B2A33] block">Medical Confidential</span>
-            <span className="text-[#8A7580] block">Prepared for Physician Clinical Review</span>
-          </div>
-        </div>
-
-        {/* Patient Identity Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] text-xs">
-          <div>
-            <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Patient Name</span>
-            <span className="font-bold text-[#3B2A33]">{user?.fullName || 'Priya Sharma'}</span>
-          </div>
-          <div>
-            <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Date of Birth / Age</span>
-            <span className="font-bold text-[#3B2A33]">{user?.dob || '1998-05-14'} (28 yrs)</span>
-          </div>
-          <div>
-            <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Blood Group</span>
-            <span className="font-bold text-[#C2456B]">{user?.bloodGroup || 'O+'}</span>
-          </div>
-          <div>
-            <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Life Stage</span>
-            <span className="font-bold text-[#3B2A33] capitalize">{user?.lifeStage || 'Reproductive'}</span>
-          </div>
-          <div>
-            <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Height & Weight</span>
-            <span className="font-bold text-[#3B2A33]">{user?.height || '165 cm'} • {user?.weight || '58 kg'}</span>
-          </div>
-          <div>
-            <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Known Conditions</span>
-            <span className="font-bold text-[#3B2A33]">{user?.existingConditions?.join(', ') || 'Mild Anemia History'}</span>
-          </div>
-          <div className="col-span-2">
-            <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Active Prescribed Supplementation</span>
-            <span className="font-bold text-[#3B2A33]">{user?.medications?.join(', ') || 'Elemental Iron, Methylfolate, Vitamin D3'}</span>
-          </div>
-        </div>
-
-        {/* Clinical Telemetry Summary */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold text-[#3B2A33] uppercase tracking-wider border-b border-[#F6E3E8] pb-1.5">
-            1. 30-Day Physiological Telemetry Summary (AstraBand Biosensors)
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-xs">
-            <div className="p-4 bg-[#FFF8F9] rounded-2xl border border-[#F6E3E8] space-y-1">
-              <span className="text-[10px] text-[#8A7580] block font-bold uppercase">Resting Heart Rate</span>
-              <span className="text-xl font-serif font-black text-[#3B2A33] block">64 bpm</span>
-              <span className="text-[11px] text-[#2E9E6B] font-bold block">✓ Stable 60–72 bpm range</span>
-            </div>
-            <div className="p-4 bg-[#FFF8F9] rounded-2xl border border-[#F6E3E8] space-y-1">
-              <span className="text-[10px] text-[#8A7580] block font-bold uppercase">HRV Autonomic Tone</span>
-              <span className="text-xl font-serif font-black text-[#3B2A33] block">58 ms</span>
-              <span className="text-[11px] text-[#2E9E6B] font-bold block">✓ Robust parasympathetic tone</span>
-            </div>
-            <div className="p-4 bg-[#FFF8F9] rounded-2xl border border-[#F6E3E8] space-y-1">
-              <span className="text-[10px] text-[#8A7580] block font-bold uppercase">Blood Oxygen (SpO2)</span>
-              <span className="text-xl font-serif font-black text-[#3B2A33] block">98%</span>
-              <span className="text-[11px] text-[#2E9E6B] font-bold block">✓ 0 nocturnal desaturations</span>
-            </div>
-            <div className="p-4 bg-[#FFF8F9] rounded-2xl border border-[#F6E3E8] space-y-1">
-              <span className="text-[10px] text-[#8A7580] block font-bold uppercase">Mean Sleep Duration</span>
-              <span className="text-xl font-serif font-black text-purple-700 block">7h 35m</span>
-              <span className="text-[11px] text-purple-600 font-bold block">✓ 86% restorative sleep index</span>
+            <div className="text-right text-xs space-y-0.5 font-mono">
+              <span className="font-bold text-[#3B2A33] block">Medical Confidential</span>
+              <span className="text-[#8A7580] block">Prepared for Physician Clinical Review</span>
             </div>
           </div>
-        </div>
 
-        {/* Gynecological & Reproductive Analysis */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold text-[#3B2A33] uppercase tracking-wider border-b border-[#F6E3E8] pb-1.5">
-            2. Reproductive Cycle & Hormonal Phase Analysis
-          </h3>
-          <div className="p-5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] space-y-2 text-xs text-[#3B2A33] leading-relaxed">
-            <p>
-              • <strong>Menstrual Pattern:</strong> Average cycle length established at {user?.menstrualHistory?.cycleLength || 28} days. Variance across last 6 cycles is ±1.2 days (High regularity confidence index).
-            </p>
-            <p>
-              • <strong>Hormonal Rhythm:</strong> Basal body skin temperature shift (+0.3°C) accurately aligns with estimated Day 14 ovulation window. Follicular phase progression exhibits expected estrogen surge without luteal deficiency.
-            </p>
-            <p>
-              • <strong>Symptom Profile:</strong> Mild pre-menstrual lower back tension and fatigue noted on Days 26–28. No alarming menorrhagia, acute dysmenorrhea, or abnormal pelvic symptoms recorded.
-            </p>
+          {/* Patient Identity Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] text-xs">
+            <div>
+              <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Patient Name</span>
+              <span className="font-bold text-[#3B2A33]">{user?.fullName || (isDemo ? 'Priya Sharma' : 'User')}</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Date of Birth / Age</span>
+              <span className="font-bold text-[#3B2A33]">{user?.dob || (isDemo ? '1998-05-14 (28 yrs)' : 'Not set')}</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Blood Group</span>
+              <span className="font-bold text-[#C2456B]">{user?.bloodGroup || 'Not set'}</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Life Stage</span>
+              <span className="font-bold text-[#3B2A33] capitalize">{user?.lifeStage || 'Reproductive'}</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Height & Weight</span>
+              <span className="font-bold text-[#3B2A33]">{user?.height ? `${user.height} • ${user?.weight || ''}` : (isDemo ? '165 cm • 58 kg' : 'Not set')}</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Known Conditions</span>
+              <span className="font-bold text-[#3B2A33]">{user?.existingConditions && user.existingConditions.length > 0 ? user.existingConditions.join(', ') : (isDemo ? 'Mild Anemia History' : 'None reported')}</span>
+            </div>
+            <div className="col-span-2">
+              <span className="text-[10px] text-[#8A7580] uppercase font-bold block">Active Prescribed Supplementation</span>
+              <span className="font-bold text-[#3B2A33]">{user?.medications && user.medications.length > 0 ? user.medications.join(', ') : (isDemo ? 'Elemental Iron, Methylfolate, Vitamin D3' : 'None recorded')}</span>
+            </div>
           </div>
-        </div>
 
-        {/* Longitudinal Biomarkers Table */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold text-[#3B2A33] uppercase tracking-wider border-b border-[#F6E3E8] pb-1.5">
-            3. Longitudinal Laboratory Biomarkers & Hematology
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead>
-                <tr className="border-b border-[#F6E3E8] text-[#8A7580]">
-                  <th className="py-2.5 font-bold">Biomarker Test</th>
-                  <th className="py-2.5 font-bold">Result Value</th>
-                  <th className="py-2.5 font-bold">Reference Interval</th>
-                  <th className="py-2.5 font-bold">Clinical Status</th>
-                  <th className="py-2.5 font-bold">Reported Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F6E3E8]">
-                {biomarkers.length > 0 ? (
-                  biomarkers.map((b) => (
-                    <tr key={b.test} className="hover:bg-[#FFF8F9]">
-                      <td className="py-2.5 font-bold text-[#3B2A33]">{b.test}</td>
-                      <td className="py-2.5 font-serif font-black text-[#C2456B]">{b.result}</td>
-                      <td className="py-2.5 text-[#8A7580]">{b.ref}</td>
-                      <td className="py-2.5 font-bold text-[#2E9E6B]">{b.status}</td>
-                      <td className="py-2.5 text-[#8A7580] font-mono">{b.date}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-xs text-[#8A7580] italic">
-                      No laboratory biomarker records uploaded yet. Laboratory test panels will appear here once submitted or verified during clinical reviews.
-                    </td>
+          {/* Clinical Telemetry Summary */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-[#3B2A33] uppercase tracking-wider border-b border-[#F6E3E8] pb-1.5">
+              1. 30-Day Physiological Telemetry Summary (AstraBand Biosensors)
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-xs">
+              <div className="p-4 bg-[#FFF8F9] rounded-2xl border border-[#F6E3E8] space-y-1">
+                <span className="text-[10px] text-[#8A7580] block font-bold uppercase">Resting Heart Rate</span>
+                <span className="text-xl font-serif font-black text-[#3B2A33] block">{activeDossier.vitals?.restingHR || '64 bpm'}</span>
+                <span className="text-[11px] text-[#2E9E6B] font-bold block">✓ Physiological baseline</span>
+              </div>
+              <div className="p-4 bg-[#FFF8F9] rounded-2xl border border-[#F6E3E8] space-y-1">
+                <span className="text-[10px] text-[#8A7580] block font-bold uppercase">HRV Autonomic Tone</span>
+                <span className="text-xl font-serif font-black text-[#3B2A33] block">{activeDossier.vitals?.hrv || '58 ms'}</span>
+                <span className="text-[11px] text-[#2E9E6B] font-bold block">✓ Autonomic balance</span>
+              </div>
+              <div className="p-4 bg-[#FFF8F9] rounded-2xl border border-[#F6E3E8] space-y-1">
+                <span className="text-[10px] text-[#8A7580] block font-bold uppercase">Blood Oxygen (SpO2)</span>
+                <span className="text-xl font-serif font-black text-[#3B2A33] block">{activeDossier.vitals?.spO2 || '98%'}</span>
+                <span className="text-[11px] text-[#2E9E6B] font-bold block">✓ Optimal oxygenation</span>
+              </div>
+              <div className="p-4 bg-[#FFF8F9] rounded-2xl border border-[#F6E3E8] space-y-1">
+                <span className="text-[10px] text-[#8A7580] block font-bold uppercase">Mean Sleep Duration</span>
+                <span className="text-xl font-serif font-black text-purple-700 block">{activeDossier.vitals?.sleep || '7h 35m'}</span>
+                <span className="text-[11px] text-purple-600 font-bold block">✓ Restorative sleep index</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Gynecological & Reproductive Analysis */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-[#3B2A33] uppercase tracking-wider border-b border-[#F6E3E8] pb-1.5">
+              2. Reproductive Cycle & Hormonal Phase Analysis
+            </h3>
+            <div className="p-5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] space-y-2 text-xs text-[#3B2A33] leading-relaxed">
+              {activeDossier.notes && activeDossier.notes.length > 0 ? (
+                activeDossier.notes.map((note: string, idx: number) => (
+                  <p key={idx} dangerouslySetInnerHTML={{ __html: note }} />
+                ))
+              ) : (
+                <p>• <strong>Menstrual Pattern:</strong> Average cycle length established at {user?.menstrualHistory?.cycleLength || 28} days.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Longitudinal Biomarkers Table */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-[#3B2A33] uppercase tracking-wider border-b border-[#F6E3E8] pb-1.5">
+              3. Longitudinal Laboratory Biomarkers & Hematology
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead>
+                  <tr className="border-b border-[#F6E3E8] text-[#8A7580]">
+                    <th className="py-2.5 font-bold">Biomarker Test</th>
+                    <th className="py-2.5 font-bold">Result Value</th>
+                    <th className="py-2.5 font-bold">Reference Interval</th>
+                    <th className="py-2.5 font-bold">Clinical Status</th>
+                    <th className="py-2.5 font-bold">Reported Date</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Physician Review & Signature Box */}
-        <div className="pt-6 border-t border-[#F6E3E8] grid grid-cols-1 sm:grid-cols-2 gap-8 text-xs">
-          <div className="space-y-2">
-            <span className="font-bold text-[#3B2A33] block uppercase tracking-wider text-[10px]">
-              Attending Physician Consultation Remarks
-            </span>
-            <div className="p-4 rounded-xl border border-dashed border-[#F6E3E8] min-h-[70px] text-[#8A7580] italic leading-relaxed">
-              {isDemo
-                ? '"Patient exhibits stable follicular telemetry and excellent autonomic HRV recovery. Continued compliance with prescribed micronutrients (Iron & Vitamin D3) is recommended. Follow-up consultation scheduled for next routine check."'
-                : '"New patient baseline intake recorded. Ongoing telemetry monitoring enabled. Follow-up consultation recommended to establish personalized clinical protocols."'}
+                </thead>
+                <tbody className="divide-y divide-[#F6E3E8]">
+                  {biomarkers.length > 0 ? (
+                    biomarkers.map((b: any) => (
+                      <tr key={b.test} className="hover:bg-[#FFF8F9]">
+                        <td className="py-2.5 font-bold text-[#3B2A33]">{b.test}</td>
+                        <td className="py-2.5 font-serif font-black text-[#C2456B]">{b.result}</td>
+                        <td className="py-2.5 text-[#8A7580]">{b.ref}</td>
+                        <td className="py-2.5 font-bold text-[#2E9E6B]">{b.status}</td>
+                        <td className="py-2.5 text-[#8A7580] font-mono">{b.date}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-xs text-[#8A7580] italic">
+                        No laboratory biomarker records uploaded yet. Laboratory test panels will appear here once submitted or verified during clinical reviews.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div className="flex flex-col justify-end text-right space-y-1">
-            <div className="border-b border-[#3B2A33] w-52 ml-auto pb-1">
-              <span className="font-serif italic font-bold text-[#3B2A33] text-sm">
+          {/* Physician Review & Signature Box */}
+          <div className="pt-6 border-t border-[#F6E3E8] grid grid-cols-1 sm:grid-cols-2 gap-8 text-xs">
+            <div className="space-y-2">
+              <span className="font-bold text-[#3B2A33] block uppercase tracking-wider text-[10px]">
+                Attending Physician Consultation Remarks
+              </span>
+              <div className="p-4 rounded-xl border border-dashed border-[#F6E3E8] min-h-[70px] text-[#8A7580] italic leading-relaxed">
                 {isDemo
-                  ? (user?.lifeStage === 'pregnancy' ? 'Dr. Sunita Rao, MD (OB/GYN)' : 'Dr. Anjali Mehta, MD (OB/GYN)')
-                  : 'Clinical Review Pending Assignment'}
+                  ? '"Patient exhibits stable follicular telemetry and excellent autonomic HRV recovery. Continued compliance with prescribed micronutrients (Iron & Vitamin D3) is recommended. Follow-up consultation scheduled for next routine check."'
+                  : '"New patient baseline intake recorded. Ongoing telemetry monitoring enabled. Follow-up consultation recommended to establish personalized clinical protocols."'}
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-end text-right space-y-1">
+              <div className="border-b border-[#3B2A33] w-52 ml-auto pb-1">
+                <span className="font-serif italic font-bold text-[#3B2A33] text-sm">
+                  {activeDossier.doctor || (isDemo ? 'Dr. Anjali Mehta, MD (OB/GYN)' : 'Clinical Review Pending Assignment')}
+                </span>
+              </div>
+              <span className="text-[10px] text-[#8A7580] font-mono">
+                {activeDossier.doctorReg || (isDemo ? 'Board Certified Obstetrician & Gynecologist • Reg #MH-84210' : 'Registered Clinician Network • AstraCare Health Portal')}
               </span>
             </div>
-            <span className="text-[10px] text-[#8A7580] font-mono">
-              {isDemo ? 'Board Certified Obstetrician & Gynecologist • Reg #MH-84210' : 'Registered Clinician Network • AstraCare Health Portal'}
-            </span>
+          </div>
+
+        </div>
+      ) : (
+        /* CLEAN EMPTY STATE FOR NEW USERS WHO HAVE NOT COMPILED A REPORT YET */
+        <div className="p-10 sm:p-14 text-center rounded-3xl bg-white border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-5 print:hidden">
+          <div className="w-16 h-16 rounded-3xl bg-[#FFF8F9] border border-[#F6E3E8] flex items-center justify-center text-[#C2456B] mx-auto shadow-xs">
+            <FileText size={32} />
+          </div>
+          <div className="space-y-2 max-w-md mx-auto">
+            <h2 className="text-xl font-serif font-black text-[#3B2A33]">
+              No Clinical Health Dossiers Yet
+            </h2>
+            <p className="text-xs text-[#8A7580] leading-relaxed">
+              Welcome, <strong className="text-[#3B2A33]">{user?.fullName || 'User'}</strong>! As a new account, your medical records are completely clean and private. Click below to compile your first verified clinical summary from your registered medical baseline.
+            </p>
+          </div>
+          <div>
+            <button
+              onClick={handleGenerateReport}
+              disabled={isGenerating}
+              className="px-6 py-3 bg-[#C2456B] hover:bg-[#b03d60] active:bg-[#993452] text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-[#C2456B]/20 inline-flex items-center gap-2 disabled:opacity-50"
+            >
+              <Sparkles size={16} className={isGenerating ? 'animate-spin' : ''} />
+              <span>{isGenerating ? 'Compiling AI Summary...' : 'Generate First Clinical Summary'}</span>
+            </button>
           </div>
         </div>
-
-      </div>
+      )}
 
       {/* PAST REPORTS ARCHIVE */}
       <div className="p-7 sm:p-8 rounded-3xl bg-white border border-[#F6E3E8] shadow-[0_4px_24px_rgba(194,69,107,0.04)] space-y-5 print:hidden">

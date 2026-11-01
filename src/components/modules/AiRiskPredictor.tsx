@@ -21,9 +21,11 @@ import {
   Clock
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { isDemoUser } from '../../data/demoAccounts';
 
 export default function AiRiskPredictor() {
   const { user, setCurrentRoute } = useApp();
+  const isDemo = isDemoUser(user?.email);
   const [isScanning, setIsScanning] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -164,7 +166,7 @@ export default function AiRiskPredictor() {
           </p>
           <div className="p-4 bg-[#FFF8F9] rounded-2xl space-y-1.5 text-xs text-[#3B2A33] border border-[#F6E3E8]">
             <span className="font-bold text-[#3B2A33] block text-[11px]">Clinical Action Guidance:</span>
-            <div>• {isPregnancy ? 'Scheduled 50g OGTT screening with Dr. Sunita Rao on Nov 12' : 'Daily hydration target kept above 2,500ml'}</div>
+            <div>• {isPregnancy ? (isDemo ? 'Scheduled 50g OGTT screening with Dr. Sunita Rao on Nov 12' : 'Scheduled prenatal screening with attending OB/GYN') : 'Daily hydration target kept above 2,500ml'}</div>
             <div>• Prioritize high-fiber complex carbohydrates to minimize glycemic excursions</div>
           </div>
           <div className="pt-1 flex justify-between items-center text-xs">
@@ -188,13 +190,25 @@ export default function AiRiskPredictor() {
             Autonomic Resilience & Cardiac Safety
           </h3>
           <p className="text-xs text-[#8A7580] leading-relaxed">
-            Analyzes AstraBand biosensors (Resting HR 62 bpm, HRV RMSSD 54ms, SpO2 98%) against age-matched clinical epidemiological cohorts.
+            {isDemo 
+              ? 'Analyzes AstraBand biosensors (Resting HR 62 bpm, HRV RMSSD 54ms, SpO2 98%) against age-matched clinical epidemiological cohorts.'
+              : 'Synthesizes self-reported profile baseline against age-matched clinical cohorts. Pair AstraBand to stream continuous autonomic telemetry.'}
           </p>
           <div className="p-4 bg-[#FFF8F9] rounded-2xl space-y-1.5 text-xs text-[#3B2A33] border border-[#F6E3E8]">
             <span className="font-bold text-[#3B2A33] block text-[11px]">Telemetry Diagnostic Checks:</span>
-            <div>• Resting HR: 62 bpm (Optimal cardiac stroke volume efficiency)</div>
-            <div>• Nocturnal HRV RMSSD: 54 ms (High parasympathetic vagal activity)</div>
-            <div>• 0 nocturnal oxygen desaturation episodes recorded</div>
+            {isDemo ? (
+              <>
+                <div>• Resting HR: 62 bpm (Optimal cardiac stroke volume efficiency)</div>
+                <div>• Nocturnal HRV RMSSD: 54 ms (High parasympathetic vagal activity)</div>
+                <div>• 0 nocturnal oxygen desaturation episodes recorded</div>
+              </>
+            ) : (
+              <>
+                <div>• Resting HR: Pending sensor sync (Self-reported baseline)</div>
+                <div>• Nocturnal HRV: Awaiting continuous sleep telemetry</div>
+                <div>• Clinical baseline within normal bounds for age {user?.dob ? new Date().getFullYear() - new Date(user.dob).getFullYear() : '28'}</div>
+              </>
+            )}
           </div>
           <div className="pt-1 flex justify-between items-center text-xs">
             <span className="text-[#2E9E6B] font-bold">✓ 0 Arrhythmias or Bradycardia Events</span>
@@ -221,8 +235,17 @@ export default function AiRiskPredictor() {
           </p>
           <div className="p-4 bg-[#FFF8F9] rounded-2xl space-y-1.5 text-xs text-[#3B2A33] border border-[#F6E3E8]">
             <span className="font-bold text-[#3B2A33] block text-[11px]">Hormonal Thermogenesis Analysis:</span>
-            <div>• Baseline Skin Temp: 36.4°C (Consistent with normal follicular phase)</div>
-            <div>• Energy scale: 4.5/5 (No chronic fatigue or sluggishness patterns)</div>
+            {isDemo ? (
+              <>
+                <div>• Baseline Skin Temp: 36.4°C (Consistent with normal follicular phase)</div>
+                <div>• Energy scale: 4.5/5 (No chronic fatigue or sluggishness patterns)</div>
+              </>
+            ) : (
+              <>
+                <div>• Baseline Skin Temp: Awaiting TMP117 sensor pairing</div>
+                <div>• Energy scale: Awaiting first daily check-in</div>
+              </>
+            )}
           </div>
           <div className="pt-1 flex justify-between items-center text-xs">
             <span className="text-[#2E9E6B] font-bold">✓ Euthyroid Thermal Pattern</span>
@@ -288,26 +311,38 @@ export default function AiRiskPredictor() {
             </div>
 
             <p className="text-xs text-[#8A7580] leading-relaxed mb-4">
-              Continuous lifestyle adherence, optimized micronutrients, and consistent sleep have systematically attenuated your baseline risk indices over the last 6 months.
+              {isDemo
+                ? 'Continuous lifestyle adherence, optimized micronutrients, and consistent sleep have systematically attenuated your baseline risk indices over the last 6 months.'
+                : 'As you log daily check-ins, hydration, and sleep, longitudinal trend models will calibrate your personal risk trajectory over time.'}
             </p>
 
-            <div className="space-y-3">
-              {historicalTrajectory.map((h) => (
-                <div key={h.month} className="p-3.5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] flex items-center justify-between text-xs">
-                  <span className="font-bold text-[#3B2A33]">{h.month}</span>
-                  <div className="flex items-center gap-4">
-                    <span className="text-[#8A7580]">PCOS: <strong className="text-[#C2456B]">{h.pcos}%</strong></span>
-                    <span className="text-[#8A7580]">Cardio: <strong className="text-[#2E9E6B]">{h.cardio}%</strong></span>
-                    <span className="text-[#8A7580]">Metabolic: <strong className="text-purple-600">{h.metabolic}%</strong></span>
+            {isDemo ? (
+              <div className="space-y-3">
+                {historicalTrajectory.map((h) => (
+                  <div key={h.month} className="p-3.5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] flex items-center justify-between text-xs">
+                    <span className="font-bold text-[#3B2A33]">{h.month}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="text-[#8A7580]">PCOS: <strong className="text-[#C2456B]">{h.pcos}%</strong></span>
+                      <span className="text-[#8A7580]">Cardio: <strong className="text-[#2E9E6B]">{h.cardio}%</strong></span>
+                      <span className="text-[#8A7580]">Metabolic: <strong className="text-purple-600">{h.metabolic}%</strong></span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-6 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] text-center space-y-2">
+                <Clock size={28} className="mx-auto text-[#C2456B]/60" />
+                <p className="text-xs font-bold text-[#3B2A33]">Baseline Tracking Initiated</p>
+                <p className="text-[11px] text-[#8A7580] max-w-sm mx-auto">
+                  Historical monthly risk trajectory will populate as you accumulate daily biometric logs and telemetry over your first cycle.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="p-4 rounded-2xl bg-[#E4F5EC]/60 border border-[#2E9E6B]/30 flex items-center gap-2.5 text-xs text-[#2E9E6B] font-bold mt-4">
             <Shield size={16} className="shrink-0" />
-            <span>Overall Risk Score is 38% lower than regional demographic baselines.</span>
+            <span>{isDemo ? 'Overall Risk Score is 38% lower than regional demographic baselines.' : 'Clinical baseline calibrated to age cohort. Proactive preventive tracking active.'}</span>
           </div>
         </div>
 

@@ -227,10 +227,16 @@ export default function FitnessSleep() {
             <Moon size={18} className="text-purple-600" />
           </div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-serif font-black text-purple-700">7h 35m</span>
+            <span className="text-3xl sm:text-4xl font-serif font-black text-purple-700">
+              {isDemo ? '7h 35m' : (user?.lifestyle?.sleepHours ? `${user.lifestyle.sleepHours}h 00m` : '--')}
+            </span>
           </div>
-          <span className="text-xs font-bold text-purple-600 block">Sleep Quality: 88 / 100</span>
-          <span className="text-[11px] text-[#8A7580] block pt-0.5">Restorative index optimal</span>
+          <span className="text-xs font-bold text-purple-600 block">
+            {isDemo ? 'Sleep Quality: 88 / 100' : 'Baseline Self-Reported'}
+          </span>
+          <span className="text-[11px] text-[#8A7580] block pt-0.5">
+            {isDemo ? 'Restorative index optimal' : 'Wear AstraBand overnight for sensor index'}
+          </span>
         </div>
 
         {/* Resting Heart Rate */}
@@ -240,11 +246,17 @@ export default function FitnessSleep() {
             <Heart size={18} className="text-[#2E9E6B]" />
           </div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-serif font-black text-[#3B2A33]">62</span>
+            <span className="text-3xl sm:text-4xl font-serif font-black text-[#3B2A33]">
+              {isDemo ? '62' : '--'}
+            </span>
             <span className="text-xs font-bold text-[#8A7580]">bpm</span>
           </div>
-          <span className="text-xs font-bold text-[#2E9E6B] block">HRV: 54 ms (High Parasympathetic)</span>
-          <span className="text-[11px] text-[#8A7580] block pt-0.5">Cardiovascular baseline stabilized</span>
+          <span className="text-xs font-bold text-[#2E9E6B] block">
+            {isDemo ? 'HRV: 54 ms (High Parasympathetic)' : 'HRV: Sensor sync pending'}
+          </span>
+          <span className="text-[11px] text-[#8A7580] block pt-0.5">
+            {isDemo ? 'Cardiovascular baseline stabilized' : 'Resting HR calibrates via wearable'}
+          </span>
         </div>
 
       </div>
@@ -258,41 +270,53 @@ export default function FitnessSleep() {
               <span>Last Night Sleep Architecture (AstraBand Biosensor Feed)</span>
             </h3>
             <p className="text-xs text-[#8A7580] mt-0.5">
-              Fell asleep at 11:15 PM • Woke at 06:50 AM • 4 sleep cycles completed
+              {isDemo ? 'Fell asleep at 11:15 PM • Woke at 06:50 AM • 4 sleep cycles completed' : 'Awaiting overnight sleep sensor feed'}
             </p>
           </div>
           <span className="text-xs font-bold text-purple-700 bg-purple-50 px-4 py-1.5 rounded-full border border-purple-100">
-            Restorative Sleep: 86%
+            {isDemo ? 'Restorative Sleep: 86%' : 'Telemetry Pending'}
           </span>
         </div>
 
-        {/* Stacked Architecture Bar */}
-        <div className="w-full h-5 rounded-2xl overflow-hidden flex bg-[#FFF8F9] p-0.5 border border-[#F6E3E8]">
-          <div style={{ width: '23%' }} className="bg-indigo-600 h-full rounded-l-xl transition-all" title="Deep Sleep (23%)" />
-          <div style={{ width: '25%' }} className="bg-purple-500 h-full transition-all" title="REM Sleep (25%)" />
-          <div style={{ width: '52%' }} className="bg-[#E8758F]/40 h-full rounded-r-xl transition-all" title="Light Sleep (52%)" />
-        </div>
+        {isDemo ? (
+          <>
+            {/* Stacked Architecture Bar */}
+            <div className="w-full h-5 rounded-2xl overflow-hidden flex bg-[#FFF8F9] p-0.5 border border-[#F6E3E8]">
+              <div style={{ width: '23%' }} className="bg-indigo-600 h-full rounded-l-xl transition-all" title="Deep Sleep (23%)" />
+              <div style={{ width: '25%' }} className="bg-purple-500 h-full transition-all" title="REM Sleep (25%)" />
+              <div style={{ width: '52%' }} className="bg-[#E8758F]/40 h-full rounded-r-xl transition-all" title="Light Sleep (52%)" />
+            </div>
 
-        {/* 3 Architecture Detail Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-          <div className="p-5 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-1">
-            <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider block">Deep Sleep (23%)</span>
-            <span className="text-2xl font-serif font-black text-indigo-950 block">1h 45m</span>
-            <span className="text-xs text-indigo-800/80 block">Cellular regeneration, human growth hormone (HGH) release & muscular repair.</span>
-          </div>
+            {/* 3 Architecture Detail Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+              <div className="p-5 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-1">
+                <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider block">Deep Sleep (23%)</span>
+                <span className="text-2xl font-serif font-black text-indigo-950 block">1h 45m</span>
+                <span className="text-xs text-indigo-800/80 block">Cellular regeneration, human growth hormone (HGH) release & muscular repair.</span>
+              </div>
 
-          <div className="p-5 rounded-2xl bg-purple-50/70 border border-purple-100 space-y-1">
-            <span className="text-xs font-bold text-purple-700 uppercase tracking-wider block">REM Sleep (25%)</span>
-            <span className="text-2xl font-serif font-black text-purple-950 block">1h 55m</span>
-            <span className="text-xs text-purple-800/80 block">Memory consolidation, emotional equilibrium & neurotransmitter synthesis.</span>
-          </div>
+              <div className="p-5 rounded-2xl bg-purple-50/70 border border-purple-100 space-y-1">
+                <span className="text-xs font-bold text-purple-700 uppercase tracking-wider block">REM Sleep (25%)</span>
+                <span className="text-2xl font-serif font-black text-purple-950 block">1h 55m</span>
+                <span className="text-xs text-purple-800/80 block">Memory consolidation, emotional equilibrium & neurotransmitter synthesis.</span>
+              </div>
 
-          <div className="p-5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] space-y-1">
-            <span className="text-xs font-bold text-[#8A7580] uppercase tracking-wider block">Light Sleep (52%)</span>
-            <span className="text-2xl font-serif font-black text-[#3B2A33] block">3h 55m</span>
-            <span className="text-xs text-[#8A7580] block">Metabolic regulation, heart rate tapering & circadian stabilization.</span>
+              <div className="p-5 rounded-2xl bg-[#FFF8F9] border border-[#F6E3E8] space-y-1">
+                <span className="text-xs font-bold text-[#8A7580] uppercase tracking-wider block">Light Sleep (52%)</span>
+                <span className="text-2xl font-serif font-black text-[#3B2A33] block">3h 55m</span>
+                <span className="text-xs text-[#8A7580] block">Metabolic regulation, heart rate tapering & circadian stabilization.</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="p-8 text-center rounded-2xl bg-[#FFF8F9] border border-dashed border-[#F6E3E8] space-y-2">
+            <Moon className="w-8 h-8 text-purple-400 mx-auto opacity-60" />
+            <h4 className="text-sm font-bold text-[#3B2A33]">No Sleep Architecture Logged Yet</h4>
+            <p className="text-xs text-[#8A7580] max-w-md mx-auto">
+              Wear your AstraBand overnight or sync your wearable to automatically compute your deep, REM, and light sleep architecture.
+            </p>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 7-DAY WEEKLY TRENDS & AUTONOMIC RECOVERY READINESS (2 COLUMNS) */}
@@ -306,50 +330,60 @@ export default function FitnessSleep() {
               <span>7-Day Activity & Sleep Regularity</span>
             </h3>
             <span className="text-xs text-[#2E9E6B] font-bold bg-[#E4F5EC] px-3 py-1 rounded-full">
-              +14% vs Last Week
+              {isDemo ? '+14% vs Last Week' : 'Baseline Active'}
             </span>
           </div>
 
-          <div className="space-y-3 pt-2">
-            {weeklyTrends.map((wt) => (
-              <div
-                key={wt.day}
-                className={`p-3.5 rounded-2xl flex items-center justify-between transition-all ${
-                  wt.isToday
-                    ? 'bg-[#FFF8F9] border-2 border-[#C2456B] shadow-xs'
-                    : 'bg-white border border-[#F6E3E8]'
-                }`}
-              >
-                <div className="w-24">
-                  <span className={`text-xs font-bold block ${wt.isToday ? 'text-[#C2456B]' : 'text-[#3B2A33]'}`}>
-                    {wt.day}
+          {isDemo ? (
+            <div className="space-y-3 pt-2">
+              {weeklyTrends.map((wt) => (
+                <div
+                  key={wt.day}
+                  className={`p-3.5 rounded-2xl flex items-center justify-between transition-all ${
+                    wt.isToday
+                      ? 'bg-[#FFF8F9] border-2 border-[#C2456B] shadow-xs'
+                      : 'bg-white border border-[#F6E3E8]'
+                  }`}
+                >
+                  <div className="w-24">
+                    <span className={`text-xs font-bold block ${wt.isToday ? 'text-[#C2456B]' : 'text-[#3B2A33]'}`}>
+                      {wt.day}
+                    </span>
+                    <span className="text-[10px] text-[#8A7580]">{wt.sleep} hrs sleep</span>
+                  </div>
+
+                  <div className="flex-1 mx-4">
+                    <div className="flex justify-between text-[11px] font-semibold text-[#8A7580] mb-1">
+                      <span>{wt.steps.toLocaleString()} steps</span>
+                      <span>{wt.restorative}% quality</span>
+                    </div>
+                    <div className="w-full bg-[#F6E3E8] rounded-full h-2 overflow-hidden">
+                      <div
+                        className={`h-2 rounded-full ${
+                          wt.isToday
+                            ? 'bg-gradient-to-r from-[#E8758F] to-[#C2456B]'
+                            : 'bg-[#C2456B]/70'
+                        }`}
+                        style={{ width: `${Math.min(100, (wt.steps / 13000) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <span className="text-xs font-bold text-[#2E9E6B]">
+                    {wt.steps >= 10000 ? '✓ Met' : `${Math.round((wt.steps / 10000) * 100)}%`}
                   </span>
-                  <span className="text-[10px] text-[#8A7580]">{wt.sleep} hrs sleep</span>
                 </div>
-
-                <div className="flex-1 mx-4">
-                  <div className="flex justify-between text-[11px] font-semibold text-[#8A7580] mb-1">
-                    <span>{wt.steps.toLocaleString()} steps</span>
-                    <span>{wt.restorative}% quality</span>
-                  </div>
-                  <div className="w-full bg-[#F6E3E8] rounded-full h-2 overflow-hidden">
-                    <div
-                      className={`h-2 rounded-full ${
-                        wt.isToday
-                          ? 'bg-gradient-to-r from-[#E8758F] to-[#C2456B]'
-                          : 'bg-[#C2456B]/70'
-                      }`}
-                      style={{ width: `${Math.min(100, (wt.steps / 13000) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-
-                <span className="text-xs font-bold text-[#2E9E6B]">
-                  {wt.steps >= 10000 ? '✓ Met' : `${Math.round((wt.steps / 10000) * 100)}%`}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center rounded-2xl bg-[#FFF8F9] border border-dashed border-[#F6E3E8] space-y-2">
+              <BarChart2 className="w-8 h-8 text-[#C2456B] mx-auto opacity-50" />
+              <h4 className="text-sm font-bold text-[#3B2A33]">No 7-Day Activity History Yet</h4>
+              <p className="text-xs text-[#8A7580] max-w-md mx-auto">
+                Log your daily workouts or connect your step counter to visualize your weekly movement and sleep regularity trends.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Autonomic HRV Readiness & Heart Rate Zones */}

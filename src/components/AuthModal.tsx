@@ -117,6 +117,14 @@ export default function AuthModal({ isOpen, onClose, defaultMode }: AuthModalPro
         redirectByRole(DEMO_ACCOUNTS[0].profile);
       } else {
         setIsSubmitting(false);
+        try {
+          const currentTemp = JSON.parse(localStorage.getItem('womens_health_temp_onboarding') || '{}');
+          localStorage.setItem('womens_health_temp_onboarding', JSON.stringify({
+            ...currentTemp,
+            phone: phone.trim(),
+            phoneVerified: true
+          }));
+        } catch {}
         onClose();
         setCurrentRoute('/onboarding');
       }
@@ -187,20 +195,40 @@ export default function AuthModal({ isOpen, onClose, defaultMode }: AuthModalPro
       setAuthError('Invalid credentials or user not found in database. Please check your details.');
     } else {
       setIsSubmitting(false);
+      try {
+        const currentTemp = JSON.parse(localStorage.getItem('womens_health_temp_onboarding') || '{}');
+        localStorage.setItem('womens_health_temp_onboarding', JSON.stringify({
+          ...currentTemp,
+          email: email.trim(),
+        }));
+      } catch {}
       onClose();
       setCurrentRoute('/onboarding');
     }
   };
 
   const handleGoogleSignIn = () => {
-    const existing = localStorage.getItem('womens_health_user');
-    if (existing && mode === 'login') {
-      setUser(JSON.parse(existing));
+    if (mode === 'login') {
+      const existing = localStorage.getItem('womens_health_user');
+      if (existing) {
+        setUser(JSON.parse(existing));
+      } else {
+        setUser(DEMO_ACCOUNTS[0].profile);
+      }
+      onClose();
+      setCurrentRoute('/dashboard');
     } else {
-      setUser(DEMO_ACCOUNTS[0].profile);
+      try {
+        const currentTemp = JSON.parse(localStorage.getItem('womens_health_temp_onboarding') || '{}');
+        localStorage.setItem('womens_health_temp_onboarding', JSON.stringify({
+          ...currentTemp,
+          email: 'newuser@gmail.com',
+          fullName: 'New User'
+        }));
+      } catch {}
+      onClose();
+      setCurrentRoute('/onboarding');
     }
-    onClose();
-    setCurrentRoute('/dashboard');
   };
 
   return (

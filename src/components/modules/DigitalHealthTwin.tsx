@@ -20,9 +20,11 @@ import {
   Layers
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { isDemoUser } from '../../data/demoAccounts';
 
 export default function DigitalHealthTwin() {
   const { user } = useApp();
+  const isDemo = isDemoUser(user?.email);
 
   // "What-If" Simulation sliders
   const [simSleep, setSimSleep] = useState<number>(0.5); // extra hrs
@@ -30,17 +32,27 @@ export default function DigitalHealthTwin() {
   const [simHydration, setSimHydration] = useState<number>(500); // extra ml
 
   // Dynamic calculated score
-  const baseVitality = 85;
+  const baseVitality = isDemo ? 85 : 75;
   const simulatedVitality = Math.min(99, Math.round(baseVitality + simSleep * 3 + (simSteps / 2000) * 2 + (simHydration / 500) * 2));
-  const simBioAge = (-1.8 - (simulatedVitality - baseVitality) * 0.15).toFixed(1);
+  const simBioAge = isDemo ? (-1.8 - (simulatedVitality - baseVitality) * 0.15).toFixed(1) : (-0.5 - (simulatedVitality - baseVitality) * 0.15).toFixed(1);
 
-  const organSystems = [
+  const demoOrganSystems = [
     { name: 'Endocrine & Hormonal Axis', score: 86, status: 'Optimal', detail: 'Estrogen-progesterone surge in sync with follicular phase day 11' },
     { name: 'Cardiovascular & Microvascular Hemodynamics', score: 91, status: 'Exceptional', detail: 'Resting HR 62 bpm, stroke volume stabilized via AstraBand' },
     { name: 'Autonomic Vagal Nerve Resilience', score: 84, status: 'High Reserve', detail: 'Nocturnal HRV RMSSD 54ms indicates high parasympathetic capacity' },
     { name: 'Circadian SCN Alignment & Sleep Architecture', score: 88, status: 'Synchronized', detail: '86% restorative sleep index; high slow-wave recovery' },
     { name: 'Metabolic & Mitochondrial Bio-energetics', score: 82, status: 'Optimal', detail: 'Stable glycemic response with healthy lipid beta-oxidation' }
   ];
+
+  const userOrganSystems = [
+    { name: 'Endocrine & Hormonal Axis', score: 78, status: 'Calibrating', detail: `Baseline calibrated for ${user?.fullName || 'User'} (${user?.lifeStage || 'reproductive'} profile)` },
+    { name: 'Cardiovascular & Microvascular Hemodynamics', score: 80, status: 'Optimal Baseline', detail: 'Cardiovascular baseline mapped to self-reported biometric vitals' },
+    { name: 'Autonomic Vagal Nerve Resilience', score: 76, status: 'High Reserve', detail: 'Vagal nerve tone calibrated from daily stress and mood check-ins' },
+    { name: 'Circadian SCN Alignment & Sleep Architecture', score: 79, status: 'Calibrating', detail: `Sleep baseline initialized to ${user?.lifestyle?.sleepHours || 8} hrs self-reported nightly rest` },
+    { name: 'Metabolic & Mitochondrial Bio-energetics', score: 77, status: 'Optimal Baseline', detail: `Calibrated to ${user?.lifestyle?.physicalActivity || 'moderate'} activity and nutritional goals` }
+  ];
+
+  const organSystems = isDemo ? demoOrganSystems : userOrganSystems;
 
   return (
     <div id="digital-health-twin-module" className="space-y-6 w-full pb-16">
