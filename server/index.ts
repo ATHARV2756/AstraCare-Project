@@ -188,6 +188,120 @@ function requireRole(allowedRoles: Array<'patient' | 'doctor' | 'admin'>) {
 // SYSTEM & HEALTH ROUTES
 // ============================================================================
 
+app.get('/', (req: Request, res: Response) => {
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AstraCare Backend API</title>
+  <meta http-equiv="refresh" content="2;url=http://localhost:3000">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #FFF8F9;
+      color: #3B2A33;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+    .card {
+      background: white;
+      border: 1px solid #F6E3E8;
+      border-radius: 1.5rem;
+      padding: 2.5rem;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(194, 69, 107, 0.08);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #E4F5EC;
+      color: #2E9E6B;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      margin-bottom: 1.25rem;
+      border: 1px solid rgba(46, 158, 107, 0.2);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2E9E6B;
+    }
+    h1 {
+      font-size: 1.6rem;
+      color: #3B2A33;
+      margin-bottom: 0.5rem;
+      font-weight: 800;
+    }
+    .subtitle {
+      color: #C2456B;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+    }
+    p {
+      color: #8A7580;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+    .btn {
+      display: inline-block;
+      background: #C2456B;
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.85rem 1.75rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 14px rgba(194, 69, 107, 0.25);
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #b03d60;
+    }
+    .meta {
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      color: #A996A0;
+    }
+    code {
+      background: #FCE4EC;
+      color: #C2456B;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge"><span class="dot"></span> Backend API Server Online (Port 5000)</div>
+    <h1>AstraCare API Service</h1>
+    <div class="subtitle">Express REST API & Local Database Engine</div>
+    <p>
+      You opened the API port! The main visual application is hosted on <code>http://localhost:3000</code>.
+    </p>
+    <a href="http://localhost:3000" class="btn">Open AstraCare Web App &rarr;</a>
+    <div class="meta">
+      Redirecting automatically to <strong>http://localhost:3000</strong>...<br>
+      API Health Check: <a href="/api/health" style="color: #C2456B;">/api/health</a>
+    </div>
+  </div>
+</body>
+</html>`);
+});
+
 app.get('/api/health', (req: Request, res: Response) => {
   const state = db.getState();
   res.json({
