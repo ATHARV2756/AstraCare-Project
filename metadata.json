@@ -1,0 +1,6 @@
+{
+  "name": "Women's Health Portal",
+  "description": "An AI-powered supportive health platform offering cycle tracking, personalized life stage insights, and secure onboarding for women's wellness.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

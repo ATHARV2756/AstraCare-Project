@@ -1,0 +1,515 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  /* Brand */
+  --color-hero-start: #E8758F;
+  --color-hero-end:   #D4879C;
+  --color-primary:    #C2456B;
+  --color-link:       #C2456B;
+  --color-accent:     #9B5B7A;
+
+  /* Surfaces */
+  --color-bg:         #FFF8F9;
+  --color-sidebar:    #FFFFFF;
+  --color-surface:    #FFFFFF;
+  --color-popover:    #FFFFFF;
+  --color-border:     #F6E3E8;
+  --color-tint:       #FCE4EC;
+  --color-tint-text:  #C2456B;
+
+  /* Text */
+  --color-text:       #3B2A33;
+  --color-text-muted: #8A7580;
+  --color-on-primary: #FFFFFF;
+
+  /* Status */
+  --color-success:    #2E9E6B;
+  --color-warning:    #E0A030;
+  --color-danger:     #D93A3A;
+
+  /* Optional teal accent */
+  --color-teal:       #2BA6A0;
+  --color-teal-tint:  #E3F5F4;
+
+  /* Gradients */
+  --gradient-hero: linear-gradient(135deg, var(--color-hero-start), var(--color-hero-end));
+}
+
+[data-theme="dark"] {
+  /* Brand */
+  --color-hero-start: #B85574;
+  --color-hero-end:   #9B5B7A;
+  --color-primary:    #E8758F;
+  --color-link:       #F08CA8;
+  --color-accent:     #C98FAE;
+
+  /* Surfaces */
+  --color-bg:         #1A1216;
+  --color-sidebar:    #211820;
+  --color-surface:    #251A20;
+  --color-popover:    #2E2029;
+  --color-border:     #3A2A33;
+  --color-tint:       #3B2330;
+  --color-tint-text:  #F5A3B8;
+
+  /* Text */
+  --color-text:       #FBEFF3;
+  --color-text-muted: #B79DA9;
+  --color-on-primary: #2B1520;
+
+  /* Status */
+  --color-success:    #4CC38A;
+  --color-warning:    #E8B04A;
+  --color-danger:     #F06A6A;
+
+  /* Optional teal accent */
+  --color-teal:       #4CC3BC;
+  --color-teal-tint:  #17332F;
+
+  --gradient-hero: linear-gradient(135deg, var(--color-hero-start), var(--color-hero-end));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-hero-start: #B85574;
+    --color-hero-end:   #9B5B7A;
+    --color-primary:    #E8758F;
+    --color-link:       #F08CA8;
+    --color-accent:     #C98FAE;
+
+    --color-bg:         #1A1216;
+    --color-sidebar:    #211820;
+    --color-surface:    #251A20;
+    --color-popover:    #2E2029;
+    --color-border:     #3A2A33;
+    --color-tint:       #3B2330;
+    --color-tint-text:  #F5A3B8;
+
+    --color-text:       #FBEFF3;
+    --color-text-muted: #B79DA9;
+    --color-on-primary: #2B1520;
+
+    --color-success:    #4CC38A;
+    --color-warning:    #E8B04A;
+    --color-danger:     #F06A6A;
+
+    --color-teal:       #4CC3BC;
+    --color-teal-tint:  #17332F;
+
+    --gradient-hero: linear-gradient(135deg, var(--color-hero-start), var(--color-hero-end));
+  }
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  overflow-x: hidden;
+}
+
+/* ============================================================================
+   SOFT ROSE DARK MODE AUTOMATIC COMPONENT MAPPINGS
+   ============================================================================ */
+
+[data-theme="dark"] #astracare-app-shell {
+  background-color: var(--color-bg) !important;
+  color: var(--color-text) !important;
+}
+
+/* Surfaces */
+[data-theme="dark"] aside {
+  background-color: var(--color-sidebar) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] header {
+  background-color: var(--color-sidebar) !important;
+  border-color: var(--color-border) !important;
+}
+
+#landing-container #main-header,
+[data-theme="dark"] #landing-container #main-header {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+#language-select,
+[data-theme="dark"] #language-select,
+select#language-select {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Header Controls Highlighted Borders */
+#btn-theme-toggle,
+#language-selector-container > div {
+  border-color: #E8A5B8 !important;
+}
+
+[data-theme="dark"] #btn-theme-toggle,
+[data-theme="dark"] #language-selector-container > div {
+  border-color: rgba(232, 117, 143, 0.45) !important;
+  background-color: #251A20 !important;
+  box-shadow: 0 0 0 1px rgba(232, 117, 143, 0.15) !important;
+}
+
+[data-theme="dark"] #btn-theme-toggle:hover,
+[data-theme="dark"] #language-selector-container > div:hover {
+  border-color: #E8758F !important;
+  box-shadow: 0 0 0 1px rgba(232, 117, 143, 0.3) !important;
+}
+
+[data-theme="dark"] .bg-white {
+  background-color: var(--color-surface) !important;
+}
+
+[data-theme="dark"] .bg-\[\#FFF8F9\] {
+  background-color: var(--color-bg) !important;
+}
+
+[data-theme="dark"] .bg-\[\#FCE4EC\] {
+  background-color: var(--color-tint) !important;
+}
+
+[data-theme="dark"] .bg-\[\#FFF0F3\] {
+  background-color: var(--color-tint) !important;
+}
+
+[data-theme="dark"] .bg-\[\#FFF4F6\] {
+  background-color: #2A1A22 !important;
+}
+
+[data-theme="dark"] .bg-stone-50,
+[data-theme="dark"] .bg-stone-50\/50,
+[data-theme="dark"] .bg-stone-50\/60,
+[data-theme="dark"] .bg-stone-100 {
+  background-color: #2E2029 !important;
+}
+
+/* Borders */
+[data-theme="dark"] .border-\[\#F6E3E8\],
+[data-theme="dark"] .border-stone-100,
+[data-theme="dark"] .border-stone-100\/80,
+[data-theme="dark"] .border-stone-200,
+[data-theme="dark"] .border-stone-200\/50,
+[data-theme="dark"] .border-stone-200\/80,
+[data-theme="dark"] .border-stone-300 {
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] .border-\[\#FED7DE\] {
+  border-color: #4A3240 !important;
+}
+
+/* Texts */
+[data-theme="dark"] .text-\[\#3B2A33\],
+[data-theme="dark"] .text-stone-900,
+[data-theme="dark"] .text-stone-800,
+[data-theme="dark"] .text-stone-700 {
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .text-\[\#8A7580\],
+[data-theme="dark"] .text-stone-600,
+[data-theme="dark"] .text-stone-500,
+[data-theme="dark"] .text-stone-400 {
+  color: var(--color-text-muted) !important;
+}
+
+[data-theme="dark"] .text-\[\#C2456B\] {
+  color: var(--color-link) !important;
+}
+
+/* Active navigation item */
+[data-theme="dark"] .bg-\[\#FCE4EC\].text-\[\#C2456B\] {
+  background-color: var(--color-tint) !important;
+  color: var(--color-tint-text) !important;
+}
+
+/* Buttons */
+[data-theme="dark"] .bg-\[\#C2456B\] {
+  background-color: var(--color-primary) !important;
+  color: var(--color-on-primary) !important;
+}
+
+[data-theme="dark"] .bg-\[\#C2456B\]:hover {
+  background-color: #F08CA8 !important;
+}
+
+[data-theme="dark"] .bg-\[\#3B2A33\] {
+  background-color: #382430 !important;
+  color: #FBEFF3 !important;
+  border-color: #553A49 !important;
+}
+
+[data-theme="dark"] .bg-\[\#3B2A33\]:hover {
+  background-color: #4A3240 !important;
+}
+
+[data-theme="dark"] .border-\[\#3B2A33\] {
+  border-color: #553A49 !important;
+}
+
+/* Hero card banner */
+[data-theme="dark"] .bg-gradient-to-r.from-\[\#D9607F\].via-\[\#E8758F\].to-\[\#D4879C\] {
+  background: var(--gradient-hero) !important;
+}
+
+/* Protocol & Highlight Banners in Dark Mode (Cycle-Synced Workout, Longevity Simulator, etc.) */
+[data-theme="dark"] .card-protocol-banner,
+[data-theme="dark"] #card-cycle-synced-protocol,
+[data-theme="dark"] [class*="from-[#FFF8F9]"],
+[data-theme="dark"] [class*="to-[#FCE4EC]"],
+[data-theme="dark"] [class*="via-white"] {
+  background-image: none !important;
+  background: #251A20 !important;
+  background-color: #251A20 !important;
+  border-color: var(--color-border) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="dark"] .card-protocol-banner h3,
+[data-theme="dark"] .card-protocol-banner h4,
+[data-theme="dark"] .card-protocol-banner strong,
+[data-theme="dark"] #card-cycle-synced-protocol h3,
+[data-theme="dark"] #card-cycle-synced-protocol strong,
+[data-theme="dark"] [class*="from-[#FFF8F9]"] h3,
+[data-theme="dark"] [class*="from-[#FFF8F9]"] h4,
+[data-theme="dark"] [class*="from-[#FFF8F9]"] strong {
+  color: #FBEFF3 !important;
+}
+
+[data-theme="dark"] .card-protocol-banner p,
+[data-theme="dark"] #card-cycle-synced-protocol p,
+[data-theme="dark"] [class*="from-[#FFF8F9]"] p {
+  color: #D4C2CC !important;
+}
+
+[data-theme="dark"] .card-protocol-banner svg,
+[data-theme="dark"] #card-cycle-synced-protocol svg,
+[data-theme="dark"] [class*="from-[#FFF8F9]"] svg {
+  color: #F08CA8 !important;
+}
+
+/* Cycle Phase Cards in Dark Mode */
+[data-theme="dark"] .cycle-phase-card {
+  background-image: none !important;
+  background-color: var(--color-surface) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] .cycle-phase-card.cycle-phase-active {
+  background-image: none !important;
+  background-color: #3B2330 !important;
+  border-color: #E8758F !important;
+  box-shadow: 0 0 0 1px rgba(232, 117, 143, 0.35) !important;
+}
+
+[data-theme="dark"] .cycle-phase-card.cycle-phase-active.phase-purple {
+  background-image: none !important;
+  background-color: #2E1E38 !important;
+  border-color: #C084FC !important;
+  box-shadow: 0 0 0 1px rgba(192, 132, 252, 0.35) !important;
+}
+
+[data-theme="dark"] .cycle-phase-card.cycle-phase-active.phase-amber {
+  background-image: none !important;
+  background-color: #3A2E14 !important;
+  border-color: #F59E0B !important;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.35) !important;
+}
+
+[data-theme="dark"] .cycle-phase-card h3 {
+  color: #FBEFF3 !important;
+}
+
+[data-theme="dark"] .cycle-phase-card p {
+  color: #D4C2CC !important;
+}
+
+[data-theme="dark"] .cycle-phase-card .phase-pill {
+  background-image: none !important;
+  background-color: #251A20 !important;
+  border-color: #3A2A33 !important;
+  color: #F5A3B8 !important;
+}
+
+/* Active and Inactive Sidebar Navigation Items */
+[data-theme="dark"] aside nav button.nav-inactive,
+[data-theme="dark"] aside nav button:not(.nav-active),
+[data-theme="dark"] .nav-inactive,
+[data-theme="dark"] button.nav-inactive {
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] aside nav button.nav-active,
+[data-theme="dark"] .nav-active {
+  background-color: var(--color-tint) !important;
+  color: var(--color-tint-text) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] aside nav button.nav-inactive:hover,
+[data-theme="dark"] aside nav button:not(.nav-active):hover {
+  background-color: #2E2029 !important;
+  color: #FBEFF3 !important;
+}
+
+[data-theme="dark"] aside button:not(.nav-active):not(.bg-red-50):not(.bg-\[\#C2456B\]) {
+  background-color: transparent !important;
+}
+
+[data-theme="dark"] aside button:not(.nav-active):not(.bg-red-50):not(.bg-\[\#C2456B\]):hover {
+  background-color: #2E2029 !important;
+}
+
+/* Specific opacity-modified background tint classes in Dark Mode (without wildcard that captures hover:) */
+[data-theme="dark"] .bg-\[\#FCE4EC\]\/70,
+[data-theme="dark"] .bg-\[\#FCE4EC\]\/60 {
+  background-color: var(--color-tint) !important;
+}
+
+[data-theme="dark"] .bg-purple-50,
+[data-theme="dark"] .bg-purple-50\/80 {
+  background-color: #2E1E38 !important;
+  border-color: #583366 !important;
+}
+
+[data-theme="dark"] .bg-amber-50,
+[data-theme="dark"] .bg-amber-50\/80 {
+  background-color: #3A2E14 !important;
+  border-color: #5C481A !important;
+}
+
+[data-theme="dark"] .bg-rose-50,
+[data-theme="dark"] .bg-rose-50\/80 {
+  background-color: #3B2330 !important;
+  border-color: #4A3240 !important;
+}
+
+/* "+ Daily Check-in" button on hero banner */
+[data-theme="dark"] .bg-white.text-\[\#C2456B\] {
+  background-color: #FFFFFF !important;
+  color: #A8426A !important;
+}
+
+/* Inputs & Form controls */
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #1F161C !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--color-text-muted) !important;
+  opacity: 0.7;
+}
+
+[data-theme="dark"] option {
+  background-color: #2E2029 !important;
+  color: var(--color-text) !important;
+}
+
+/* Modals & Popovers */
+[data-theme="dark"] .rounded-3xl.bg-white,
+[data-theme="dark"] .rounded-2xl.bg-white,
+[data-theme="dark"] .rounded-\[2rem\].bg-white,
+[data-theme="dark"] .rounded-\[2\.5rem\].bg-white {
+  background-color: var(--color-surface) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* Shadows — soft and subtle in dark mode */
+[data-theme="dark"] .shadow-2xl,
+[data-theme="dark"] .shadow-xl,
+[data-theme="dark"] .shadow-lg,
+[data-theme="dark"] .shadow-md {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Status Badges */
+[data-theme="dark"] .bg-\[\#E4F5EC\] {
+  background-color: #16332A !important;
+}
+
+[data-theme="dark"] .text-\[\#2E9E6B\] {
+  color: var(--color-success) !important;
+}
+
+[data-theme="dark"] .bg-\[\#E3F5F4\] {
+  background-color: var(--color-teal-tint) !important;
+}
+
+[data-theme="dark"] .text-\[\#2BA6A0\] {
+  color: var(--color-teal) !important;
+}
+
+[data-theme="dark"] .bg-\[\#F3E6EE\] {
+  background-color: #33222E !important;
+}
+
+[data-theme="dark"] .text-\[\#9B5B7A\] {
+  color: var(--color-accent) !important;
+}
+
+/* Custom Soft Rose scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #F6E3E8;
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: #E8758F;
+}
+
+[data-theme="dark"] .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+}
+[data-theme="dark"] .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-primary);
+}
+
+/* Profile Edit Screen in Dark Mode */
+[data-theme="dark"] #profile-edit-page {
+  background-color: var(--color-bg) !important;
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] #profile-edit-page input:not([type="checkbox"]):not([type="range"]),
+[data-theme="dark"] #profile-edit-page select {
+  background-color: var(--color-popover) !important;
+  color: var(--color-text) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] #profile-edit-page input:focus,
+[data-theme="dark"] #profile-edit-page select:focus {
+  border-color: var(--color-primary) !important;
+}
+
+[data-theme="dark"] #permission-demonstrator {
+  background-color: var(--color-surface) !important;
+  background-image: none !important;
+  border-color: var(--color-border) !important;
+}
